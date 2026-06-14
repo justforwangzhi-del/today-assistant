@@ -280,6 +280,16 @@ async function ensureToken(){
 async function cloudSync(key,data){
   if(!token)return;
   try{
+    // Find or create gist
+    if(!gistId){
+      const r=await fetch('https://api.github.com/gists?per_page=100',{headers:{'Authorization':`token ${token}`}});
+      if(r.ok){
+        const gists=await r.json();
+        const found=gists.find(g=>g.description==='TodayAssistant'&&g.files&&g.files['data.json']);
+        if(found)gistId=found.id;
+      }
+    }
+    
     const allData={todos:JSON.stringify(todos),wallPosts:JSON.stringify(wallPosts)};
     if(!gistId){
       const r=await fetch('https://api.github.com/gists',{method:'POST',headers:{'Authorization':`token ${token}`,'Content-Type':'application/json'},body:JSON.stringify({description:'TodayAssistant',files:{'data.json':{content:JSON.stringify(allData)}}})});
@@ -307,7 +317,19 @@ async function cloudSync(key,data){
 }
 
 async function cloudLoad(key){
-  if(!token||!gistId)return null;
+  if(!token)return null;
+  if(!gistId){
+    // Try to find existing gist
+    try{
+      const r=await fetch('https://api.github.com/gists?per_page=100',{headers:{'Authorization':`token ${token}`}});
+      if(r.ok){
+        const gists=await r.json();
+        const found=gists.find(g=>g.description==='TodayAssistant'&&g.files&&g.files['data.json']);
+        if(found){gistId=found.id;localStorage.setItem(GIST_ID_KEY,gistId)}
+      }
+    }catch(e){}
+  }
+  if(!gistId)return null;
   try{
     const r=await fetch(`https://api.github.com/gists/${gistId}`,{headers:{'Authorization':`token ${token}`}});
     const g=await r.json();
@@ -331,6 +353,13 @@ async function resetToken(){
     localStorage.removeItem(SKIP_TOKEN_KEY);
     await ensureToken();
     if(token){
+      // Try to find and load existing cloud data
+      try{
+        const ct=await cloudLoad('todos');if(ct&&ct.length)todos=ct;
+        const cp=await cloudLoad('wallPosts');if(cp&&cp.length)wallPosts=cp;
+        renderTodos();renderWall();
+      }catch(e){console.error('Load cloud data failed:',e)}
+      // Then sync current data
       try{
         await cloudSync('todos',todos);
         await cloudSync('wallPosts',wallPosts);
@@ -538,8 +567,8 @@ async function init(){
   // Ensure token on first visit
   await ensureToken();
   
-  // Try cloud load after token is set
-  if(token&&gistId){
+  // Try cloud load after token is set (finds existing gist automatically)
+  if(token){
     try{
       const ct=await cloudLoad('todos');if(ct&&ct.length)todos=ct;
       const cp=await cloudLoad('wallPosts');if(cp&&cp.length)wallPosts=cp;
