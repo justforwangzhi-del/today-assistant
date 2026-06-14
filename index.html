@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="今日助手">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>今日助手</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#6366f1;--primary-light:#818cf8;--primary-dark:#4f46e5;
+  --secondary:#ec4899;--accent:#06b6d4;
+  --success:#10b981;--warning:#f59e0b;--danger:#ef4444;
+  --text:#0f172a;--text-secondary:#475569;--text-muted:#94a3b8;
+  --bg-start:#0f172a;--bg-end:#1e293b;
+  --card:rgba(255,255,255,.08);--card-hover:rgba(255,255,255,.12);
+  --border:rgba(255,255,255,.1);--border-light:rgba(255,255,255,.15);
+  --shadow:0 8px 32px rgba(0,0,0,.3);
+  --radius:20px;--radius-sm:12px;--radius-xs:8px;
+  --safe-top:env(safe-area-inset-top,20px);
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  min-height:100vh;min-height:100dvh;padding:16px;padding-top:calc(16px + var(--safe-top));
+  padding-bottom:calc(16px + var(--safe-bottom));color:#f8fafc;
+  background:linear-gradient(135deg,var(--bg-start) 0%,var(--bg-end) 50%,#0f172a 100%);
+  background-attachment:fixed;position:relative;overflow-x:hidden;
+  line-height:1.6;-webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+
+/* Background Effects */
+.bg-effects{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.bg-orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.4;animation:orbFloat 20s ease-in-out infinite}
+.bg-orb-1{width:500px;height:500px;background:linear-gradient(135deg,#6366f1,#8b5cf6);top:-200px;left:-200px;animation-delay:0s}
+.bg-orb-2{width:400px;height:400px;background:linear-gradient(135deg,#ec4899,#f472b6);bottom:-150px;right:-150px;animation-delay:-7s}
+.bg-orb-3{width:300px;height:300px;background:linear-gradient(135deg,#06b6d4,#22d3ee);top:50%;left:50%;animation-delay:-14s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(50px,-50px) scale(1.1)}66%{transform:translate(-30px,30px) scale(.9)}}
+.bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:60px 60px}
+
+/* Main Container */
+.container{max-width:1200px;margin:0 auto;position:relative;z-index:1}
+
+/* Header */
+.header{display:flex;justify-content:space-between;align-items:center;padding:8px 0 32px}
+.header-left h1{font-size:28px;font-weight:800;letter-spacing:-.5px;background:linear-gradient(135deg,#f8fafc 0%,#94a3b8 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-left p{font-size:13px;color:var(--text-muted);margin-top:4px}
+.header-right{display:flex;align-items:center;gap:12px}
+.header-time{font-size:36px;font-weight:700;font-variant-numeric:tabular-nums;background:linear-gradient(135deg,#f8fafc,#cbd5e1);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-date{font-size:13px;color:var(--text-muted);text-align:right}
+
+/* Glass Card */
+.glass-card{
+  background:var(--card);backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  border:1px solid var(--border);border-radius:var(--radius);
+  padding:24px;transition:all .3s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 4px 24px rgba(0,0,0,.1),inset 0 1px 0 rgba(255,255,255,.05);
+}
+.glass-card:hover{background:var(--card-hover);border-color:var(--border-light);transform:translateY(-2px);box-shadow:var(--shadow)}
+
+/* Weather Card */
+.weather-section{margin-bottom:24px}
+.weather-card{
+  background:linear-gradient(135deg,rgba(99,102,241,.3) 0%,rgba(139,92,246,.2) 100%);
+  border:1px solid rgba(255,255,255,.15);position:relative;overflow:hidden;
+}
+.weather-card::before{content:'';position:absolute;top:-50%;right:-30%;width:400px;height:400px;background:radial-gradient(circle,rgba(139,92,246,.2) 0%,transparent 70%);pointer-events:none}
+.weather-main{display:flex;align-items:center;gap:32px;position:relative;z-index:1}
+.weather-icon{font-size:72px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));animation:weatherPulse 3s ease-in-out infinite}
+@keyframes weatherPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.weather-temp{font-size:64px;font-weight:800;line-height:1;letter-spacing:-2px}
+.weather-temp span{font-size:28px;font-weight:400;opacity:.7}
+.weather-info{flex:1}
+.weather-desc{font-size:20px;font-weight:600;margin-bottom:8px}
+.weather-detail{font-size:14px;color:rgba(255,255,255,.7);line-height:1.8}
+.weather-location{font-size:12px;color:rgba(255,255,255,.5);margin-top:12px;display:flex;align-items:center;gap:6px}
+.weather-alerts{margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:10px}
+.alert-item{display:flex;align-items:center;gap:10px;font-size:13px;padding:10px 14px;background:rgba(255,255,255,.05);border-radius:var(--radius-xs);border:1px solid rgba(255,255,255,.05)}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+
+/* Section */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.section-title{font-size:18px;font-weight:700;display:flex;align-items:center;gap:10px}
+.section-badge{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;font-size:10px;padding:4px 10px;border-radius:20px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+.section-link{color:var(--text-muted);font-size:12px;text-decoration:none;display:flex;align-items:center;gap:4px;transition:color .2s}
+.section-link:hover{color:#f8fafc}
+
+/* Match List */
+.match-list{display:flex;flex-direction:column;gap:12px}
+.match-item{
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);
+  border-radius:var(--radius-sm);padding:16px;transition:all .25s;
+  position:relative;overflow:hidden;
+}
+.match-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--primary),var(--secondary));opacity:0;transition:opacity .25s}
+.match-item:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1);transform:translateX(4px)}
+.match-item:hover::before{opacity:1}
+.match-league{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.match-teams{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.team{display:flex;align-items:center;gap:10px;flex:1}
+.team.right{flex-direction:row-reverse;text-align:right}
+.team-logo{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg,rgba(255,255,255,.1),rgba(255,255,255,.05));
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:800;color:#f8fafc;
+  border:1px solid rgba(255,255,255,.1);
+}
+.team-name{font-size:14px;font-weight:600;color:#e2e8f0}
+.match-vs{font-size:11px;font-weight:800;color:var(--text-muted);padding:0 4px;letter-spacing:1px}
+.match-meta{text-align:center;margin-top:10px}
+.match-time{
+  display:inline-block;font-size:12px;font-weight:600;
+  color:var(--primary-light);background:rgba(99,102,241,.15);
+  padding:4px 14px;border-radius:20px;
+}
+.match-status{font-size:11px;color:var(--success);font-weight:600;margin-top:6px}
+.match-status.live{color:var(--danger);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* Todo */
+.todo-input-group{display:flex;gap:8px;margin-bottom:16px}
+.todo-input{
+  flex:1;padding:12px 16px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  border-radius:var(--radius-sm);font-size:14px;color:#f8fafc;
+  outline:none;transition:all .2s;
+}
+.todo-input:focus{border-color:var(--primary);background:rgba(255,255,255,.08);box-shadow:0 0 0 3px rgba(99,102,241,.2)}
+.todo-input::placeholder{color:var(--text-muted)}
+.todo-btn{
+  padding:12px 20px;
+  background:linear-gradient(135deg,var(--primary),var(--primary-dark));
+  color:#fff;border:none;border-radius:var(--radius-sm);
+  font-size:13px;font-weight:600;cursor:pointer;
+  transition:all .2s;display:flex;align-items:center;gap:6px;
+}
+.todo-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(99,102,241,.4)}
+.todo-btn:active{transform:translateY(0)}
+.priority-select{display:flex;gap:4px}
+.pri-btn{
+  width:32px;height:32px;border:2px solid rgba(255,255,255,.1);
+  border-radius:var(--radius-xs);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;transition:all .2s;background:transparent;
+}
+.pri-btn:hover{transform:scale(1.05)}
+.pri-btn.active{border-color:var(--primary);background:rgba(99,102,241,.2);box-shadow:0 0 0 2px rgba(99,102,241,.3)}
+
+.todo-filters{display:flex;gap:6px;margin-bottom:16px}
+.todo-filter{
+  padding:6px 14px;border:1px solid rgba(255,255,255,.1);
+  border-radius:20px;font-size:11px;font-weight:500;
+  cursor:pointer;background:transparent;color:var(--text-muted);
+  transition:all .2s;
+}
+.todo-filter.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.todo-filter:hover:not(.active){background:rgba(255,255,255,.05);color:#e2e8f0}
+
+.todo-stats{display:flex;gap:16px;font-size:12px;color:var(--text-muted);margin-bottom:16px}
+.todo-stats span{display:flex;align-items:center;gap:4px}
+.todo-stats strong{color:#e2e8f0}
+
+.todo-list{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;padding-right:4px}
+.todo-list::-webkit-scrollbar{width:4px}
+.todo-list::-webkit-scrollbar-track{background:transparent}
+.todo-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+
+.todo-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);
+  border-radius:var(--radius-sm);transition:all .25s;
+  animation:fadeIn .3s ease;
+}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.todo-item:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1)}
+.todo-check{
+  width:20px;height:20px;border:2px solid rgba(255,255,255,.2);
+  border-radius:6px;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;transition:all .2s;flex-shrink:0;
+}
+.todo-check:hover{border-color:var(--primary)}
+.todo-check.done{background:var(--success);border-color:var(--success)}
+.todo-check.done::after{content:'✓';color:#fff;font-size:12px;font-weight:700}
+.todo-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.todo-dot.high{background:var(--danger);box-shadow:0 0 8px var(--danger)}
+.todo-dot.medium{background:var(--warning)}
+.todo-dot.low{background:var(--success)}
+.todo-content{flex:1;min-width:0}
+.todo-text{font-size:13px;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:all .2s}
+.todo-item.completed .todo-text{text-decoration:line-through;color:var(--text-muted)}
+.todo-time{font-size:10px;color:var(--text-muted);margin-top:2px}
+.todo-del{
+  width:24px;height:24px;border:none;
+  background:transparent;color:var(--text-muted);
+  cursor:pointer;border-radius:6px;font-size:14px;
+  transition:all .2s;flex-shrink:0;display:flex;
+  align-items:center;justify-content:center;
+}
+.todo-del:hover{background:rgba(239,68,68,.2);color:var(--danger)}
+.todo-empty{text-align:center;padding:40px 20px;color:var(--text-muted)}
+.todo-empty-icon{font-size:40px;margin-bottom:12px;opacity:.5}
+
+/* Footer */
+.footer{text-align:center;padding:40px 0 20px;font-size:12px;color:var(--text-muted)}
+
+/* Animations */
+.fade-up{opacity:0;transform:translateY(20px);animation:fadeUp .6s ease forwards}
+@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+.fade-up:nth-child(1){animation-delay:.1s}
+.fade-up:nth-child(2){animation-delay:.2s}
+.fade-up:nth-child(3){animation-delay:.3s}
+
+/* Mobile Optimizations */
+@media(max-width:480px){
+  body{padding:12px;padding-top:calc(12px + var(--safe-top));padding-bottom:calc(12px + var(--safe-bottom))}
+  .container{max-width:100%}
+  .header{flex-direction:column;align-items:flex-start;gap:12px;padding:4px 0 20px}
+  .header-left h1{font-size:22px}
+  .header-right{width:100%;display:flex;justify-content:space-between;align-items:center}
+  .header-time{font-size:28px}
+  .weather-card{padding:16px}
+  .weather-main{flex-wrap:wrap;gap:16px}
+  .weather-icon{font-size:56px}
+  .weather-temp{font-size:48px}
+  .weather-desc{font-size:16px}
+  .weather-detail{font-size:12px}
+  .grid{grid-template-columns:1fr;gap:16px}
+  .glass-card{padding:16px;border-radius:16px}
+  .section-title{font-size:15px}
+  .match-item{padding:12px}
+  .team-name{font-size:12px}
+  .team-logo{width:32px;height:32px;font-size:10px}
+  .match-time{font-size:11px;padding:3px 10px}
+  .todo-input{padding:10px 12px;font-size:13px}
+  .todo-btn{padding:10px 14px;font-size:12px}
+  .pri-btn{width:28px;height:28px;font-size:11px}
+  .todo-filter{padding:5px 10px;font-size:10px}
+  .todo-item{padding:10px 12px}
+  .todo-text{font-size:12px}
+}
+
+/* Redmi K90 Pro Max - Large Screen (6.73") */
+@media(min-width:480px) and (max-width:768px){
+  body{padding:20px;padding-top:calc(20px + var(--safe-top))}
+  .container{max-width:100%}
+  .header-time{font-size:32px}
+  .weather-main{gap:24px}
+  .weather-icon{font-size:64px}
+  .weather-temp{font-size:56px}
+  .grid{gap:20px}
+  .glass-card{padding:20px}
+  .match-item{padding:14px}
+}
+
+/* High DPI screens */
+@media(-webkit-min-device-pixel-ratio:2),(min-resolution:192dpi){
+  body{-webkit-font-smoothing:antialiased}
+}
+
+/* Landscape mode */
+@media(orientation:landscape) and (max-height:500px){
+  .weather-card{padding:12px}
+  .weather-main{gap:16px}
+  .weather-icon{font-size:48px}
+  .weather-temp{font-size:40px}
+  .grid{grid-template-columns:1fr 1fr}
+}
+
+/* Touch devices */
+@media(hover:none) and (pointer:coarse){
+  .glass-card:hover{transform:none;background:var(--card)}
+  .match-item:hover{transform:none}
+  .todo-btn:hover{transform:none}
+}
+
+/* PWA Standalone mode */
+@media(display-mode:standalone){
+  body{padding-top:calc(16px + var(--safe-top) + 20px)}
+}
+
+/* Notch display */
+@supports(padding-top:env(safe-area-inset-top)){
+  body{padding-top:calc(16px + env(safe-area-inset-top))}
+}
+</style>
+</head>
+<body>
+
+<div class="bg-effects">
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+  <div class="bg-grid"></div>
+</div>
+
+<div class="container">
+  <!-- Header -->
+  <div class="header fade-up">
+    <div class="header-left">
+      <h1>Today</h1>
+      <p>Your daily companion</p>
+    </div>
+    <div class="header-right">
+      <div>
+        <div class="header-time" id="header-time">00:00</div>
+        <div class="header-date" id="header-date"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weather -->
+  <div class="weather-section fade-up">
+    <div class="glass-card weather-card">
+      <div class="weather-main">
+        <div class="weather-icon" id="weather-icon">🌤️</div>
+        <div>
+          <div class="weather-temp" id="weather-temp">--<span>°C</span></div>
+        </div>
+        <div class="weather-info">
+          <div class="weather-desc" id="weather-desc">加载中...</div>
+          <div class="weather-detail" id="weather-detail"></div>
+          <div class="weather-location" id="weather-location">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            定位中...
+          </div>
+        </div>
+      </div>
+      <div class="weather-alerts" id="weather-alerts"></div>
+    </div>
+  </div>
+
+  <!-- Main Grid -->
+  <div class="grid">
+    <!-- LOL Esports -->
+    <div class="glass-card fade-up">
+      <div class="section-header">
+        <div class="section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          电竞赛事
+          <span class="section-badge">LIVE</span>
+        </div>
+        <a class="section-link" href="https://lpl.qq.com" target="_blank">
+          更多
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+      <div class="match-list" id="match-list"></div>
+    </div>
+
+    <!-- Todo -->
+    <div class="glass-card fade-up">
+      <div class="section-header">
+        <div class="section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          每日待办
+        </div>
+        <div class="todo-stats">
+          <span>📋 <strong id="todo-total">0</strong></span>
+          <span>✅ <strong id="todo-done">0</strong></span>
+        </div>
+      </div>
+      <div class="todo-input-group">
+        <input type="text" class="todo-input" id="todo-input" placeholder="添加新的待办事项..." onkeypress="if(event.key==='Enter')addTodo()">
+        <div class="priority-select">
+          <button class="pri-btn" data-p="low" onclick="setPri('low')" title="低">🟢</button>
+          <button class="pri-btn active" data-p="medium" onclick="setPri('medium')" title="中">🟡</button>
+          <button class="pri-btn" data-p="high" onclick="setPri('high')" title="高">🔴</button>
+        </div>
+        <button class="todo-btn" onclick="addTodo()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          添加
+        </button>
+      </div>
+      <div class="todo-filters">
+        <button class="todo-filter active" onclick="filterTodo('all',this)">全部</button>
+        <button class="todo-filter" onclick="filterTodo('pending',this)">待办</button>
+        <button class="todo-filter" onclick="filterTodo('completed',this)">已完成</button>
+        <button class="todo-filter" onclick="filterTodo('high',this)">🔴 紧急</button>
+      </div>
+      <div class="todo-list" id="todo-list"></div>
+    </div>
+  </div>
+
+  <div class="footer">Today Assistant · Made with ❤️</div>
+</div>
+
+<script>
+// ===== Clock =====
+function updateClock(){
+  const now=new Date();
+  const h=String(now.getHours()).padStart(2,'0');
+  const m=String(now.getMinutes()).padStart(2,'0');
+  document.getElementById('header-time').textContent=`${h}:${m}`;
+  const days=['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+  document.getElementById('header-date').textContent=`${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 ${days[now.getDay()]}`;
+}
+
+// ===== Weather =====
+const weatherAlerts={
+  hot:['🥵 高温预警：注意防暑降温，多喝水','🧊 建议：室内活动，避免午间外出'],
+  cold:['🥶 低温预警：注意保暖，添加衣物','☕ 建议：喝杯热饮暖暖身子'],
+  rain:['☂️ 雨天提醒：记得带伞出门','🚗 建议：注意路面湿滑，减速慢行'],
+  snow:['❄️ 雪天提醒：注意防滑，添衣保暖','🏠 建议：减少外出，注意道路结冰'],
+  fog:['🌫️ 大雾提醒：能见度低，注意安全','🚗 建议：开启雾灯，减速慢行'],
+  default:['🌤️ 今天天气不错，适合外出活动','💧 提醒：记得多喝水保持健康']
+};
+
+function getAlerts(code,temp){
+  if(code>=200&&code<700)return[...weatherAlerts.rain];
+  if(code>=700&&code<800)return[...weatherAlerts.fog];
+  if(parseInt(temp)>=35)return[...weatherAlerts.hot];
+  if(parseInt(temp)<=0)return[...weatherAlerts.cold];
+  return[...weatherAlerts.default];
+}
+
+function getIcon(code){
+  if(code>=200&&code<300)return'⛈️';if(code>=300&&code<600)return'🌧️';
+  if(code>=600&&code<700)return'❄️';if(code>=700&&code<800)return'🌫️';
+  if(code===800)return'☀️';if(code===801)return'⛅';return'☁️';
+}
+
+// Cache location in localStorage
+function getCachedLocation(){
+  try{
+    const cached=localStorage.getItem('userLocation');
+    if(cached){
+      const data=JSON.parse(cached);
+      const age=Date.now()-data.timestamp;
+      if(age<3600000)return data; // Cache for 1 hour
+    }
+  }catch(e){}
+  return null;
+}
+
+function cacheLocation(lat,lon){
+  try{
+    localStorage.setItem('userLocation',JSON.stringify({lat,lon,timestamp:Date.now()}));
+  }catch(e){}
+}
+
+async function fetchWeather(){
+  // First try cached location
+  const cached=getCachedLocation();
+  if(cached){
+    try{
+      await fetchWeatherByCoords(cached.lat,cached.lon);
+      return;
+    }catch(e){}
+  }
+  
+  // Check if geolocation is available and permission already granted
+  if('geolocation' in navigator){
+    try{
+      const permission=await navigator.permissions.query({name:'geolocation'});
+      if(permission.state==='granted'){
+        // Permission already granted, get location
+        navigator.geolocation.getCurrentPosition(
+          async(pos)=>{
+            cacheLocation(pos.coords.latitude,pos.coords.longitude);
+            await fetchWeatherByCoords(pos.coords.latitude,pos.coords.longitude);
+          },
+          ()=>fetchWeatherByIP(),
+          {timeout:5000,maximumAge:600000}
+        );
+        return;
+      }else if(permission.state==='prompt'){
+        // Will show prompt, but we should handle it
+        navigator.geolocation.getCurrentPosition(
+          async(pos)=>{
+            cacheLocation(pos.coords.latitude,pos.coords.longitude);
+            await fetchWeatherByCoords(pos.coords.latitude,pos.coords.longitude);
+          },
+          ()=>fetchWeatherByIP(),
+          {timeout:5000,maximumAge:600000}
+        );
+        return;
+      }
+    }catch(e){}
+  }
+  
+  // Fallback to IP-based location
+  fetchWeatherByIP();
+}
+
+async function fetchWeatherByCoords(lat,lon){
+  const res=await fetch(`https://wttr.in/${lat},${lon}?format=j1`);
+  const data=await res.json();
+  const c=data.current_condition[0];
+  const code=parseInt(c.weatherCode);
+  
+  document.getElementById('weather-icon').textContent=getIcon(code);
+  document.getElementById('weather-temp').innerHTML=`${c.temp_C}<span>°C</span>`;
+  document.getElementById('weather-desc').textContent=c.lang_zh?.[0]?.value||c.weatherDesc[0].value;
+  document.getElementById('weather-detail').innerHTML=`体感 ${c.FeelsLikeC}°C · 湿度 ${c.humidity}% · 风速 ${c.windspeedKmph}km/h`;
+  document.getElementById('weather-location').innerHTML=`
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+    ${data.nearest_area[0].areaName[0].value}, ${data.nearest_area[0].country[0].value}
+  `;
+  
+  const alerts=getAlerts(code,c.temp_C);
+  document.getElementById('weather-alerts').innerHTML=alerts.map(a=>`<div class="alert-item">${a}</div>`).join('');
+}
+
+async function fetchWeatherByIP(){
+  try{
+    const res=await fetch('https://wttr.in/?format=j1');
+    const data=await res.json();
+    const c=data.current_condition[0];
+    const code=parseInt(c.weatherCode);
+    
+    document.getElementById('weather-icon').textContent=getIcon(code);
+    document.getElementById('weather-temp').innerHTML=`${c.temp_C}<span>°C</span>`;
+    document.getElementById('weather-desc').textContent=c.lang_zh?.[0]?.value||c.weatherDesc[0].value;
+    document.getElementById('weather-detail').innerHTML=`体感 ${c.FeelsLikeC}°C · 湿度 ${c.humidity}% · 风速 ${c.windspeedKmph}km/h`;
+    document.getElementById('weather-location').innerHTML=`
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      ${data.nearest_area[0].areaName[0].value}, ${data.nearest_area[0].country[0].value}
+    `;
+    
+    const alerts=getAlerts(code,c.temp_C);
+    document.getElementById('weather-alerts').innerHTML=alerts.map(a=>`<div class="alert-item">${a}</div>`).join('');
+  }catch(e){
+    document.getElementById('weather-desc').textContent='无法获取天气';
+    document.getElementById('weather-location').innerHTML='⚠️ 请检查网络连接';
+  }
+}
+
+// ===== LOL Esports =====
+const now=new Date();
+const today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+const matches=[
+  {league:'LPL',time:'16:00',t1:'TES',n1:'Top Esports',t2:'BLG',n2:'Bilibili Gaming',date:today},
+  {league:'LCK',time:'17:00',t1:'T1',n1:'T1',t2:'GEN',n2:'Gen.G',date:today},
+  {league:'LPL',time:'19:00',t1:'JDG',n1:'JD Gaming',t2:'WBG',n2:'Weibo Gaming',date:today},
+  {league:'LCK',time:'19:30',t1:'KT',n1:'KT Rolster',t2:'HLE',n2:'Hanwha Life',date:today},
+  {league:'LEC',time:'01:00',t1:'G2',n1:'G2 Esports',t2:'FNC',n2:'Fnatic',date:'tomorrow'},
+];
+
+function renderMatches(){
+  const h=new Date().getHours(),m=new Date().getMinutes();
+  document.getElementById('match-list').innerHTML=matches.slice(0,5).map(x=>{
+    const [mh,mm]=x.time.split(':').map(Number);
+    const live=x.date===today&&h===mh;
+    const done=x.date===today&&(h>mh+1||(h===mh+1&&m>=30));
+    const time=x.date==='tomorrow'?`明天 ${x.time}`:live?'LIVE':x.time;
+    return`
+      <div class="match-item">
+        <div class="match-league">${x.league}</div>
+        <div class="match-teams">
+          <div class="team"><div class="team-logo">${x.t1}</div><div class="team-name">${x.n1}</div></div>
+          <div class="match-vs">VS</div>
+          <div class="team right"><div class="team-logo">${x.t2}</div><div class="team-name">${x.n2}</div></div>
+        </div>
+        <div class="match-meta">
+          <div class="match-time">${time}</div>
+          ${live?'<div class="match-status live">🔴 直播中</div>':''}
+          ${done?'<div class="match-status">✅ 已结束</div>':''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ===== Todo =====
+let todos=JSON.parse(localStorage.getItem('todos'))||[];
+let curFilter='all',curPri='medium';
+
+function setPri(p){
+  curPri=p;
+  document.querySelectorAll('.pri-btn').forEach(b=>b.classList.toggle('active',b.dataset.p===p));
+}
+
+function addTodo(){
+  const inp=document.getElementById('todo-input');
+  const text=inp.value.trim();
+  if(!text)return;
+  todos.unshift({id:Date.now(),text,pri:curPri,done:false,time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})});
+  save();render();inp.value='';inp.focus();
+}
+
+function toggleTodo(id){todos.find(t=>t.id===id).done=!todos.find(t=>t.id===id).done;save();render()}
+function delTodo(id){todos=todos.filter(t=>t.id!==id);save();render()}
+function filterTodo(f,btn){curFilter=f;document.querySelectorAll('.todo-filter').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render()}
+
+function render(){
+  let list=todos;
+  if(curFilter==='pending')list=todos.filter(t=>!t.done);
+  else if(curFilter==='completed')list=todos.filter(t=>t.done);
+  else if(curFilter==='high')list=todos.filter(t=>t.pri==='high');
+
+  document.getElementById('todo-list').innerHTML=list.length?list.map(t=>`
+    <div class="todo-item ${t.done?'completed':''}">
+      <div class="todo-check ${t.done?'done':''}" onclick="toggleTodo(${t.id})"></div>
+      <div class="todo-dot ${t.pri}"></div>
+      <div class="todo-content">
+        <div class="todo-text">${t.text}</div>
+        <div class="todo-time">${t.time}</div>
+      </div>
+      <button class="todo-del" onclick="delTodo(${t.id})">×</button>
+    </div>`).join(''):`<div class="todo-empty"><div class="todo-empty-icon">📝</div><div>暂无待办事项</div></div>`;
+
+  document.getElementById('todo-total').textContent=todos.length;
+  document.getElementById('todo-done').textContent=todos.filter(t=>t.done).length;
+}
+
+function save(){localStorage.setItem('todos',JSON.stringify(todos))}
+
+// ===== Init =====
+updateClock();setInterval(updateClock,1000);
+fetchWeather();setInterval(fetchWeather,600000);
+renderMatches();render();
+
+// Register Service Worker
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+
+// Mobile optimizations
+if('ontouchstart' in window){
+  document.body.classList.add('touch-device');
+}
+
+// Handle visibility change for performance
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){
+    document.body.style.animationPlayState='paused';
+  }else{
+    document.body.style.animationPlayState='running';
+    updateClock();
+  }
+});
+
+// Prevent zoom on double tap
+let lastTouchEnd=0;
+document.addEventListener('touchend',e=>{
+  const now=Date.now();
+  if(now-lastTouchEnd<=300)e.preventDefault();
+  lastTouchEnd=now;
+},false);
+</script>
+</body>
+</html>
