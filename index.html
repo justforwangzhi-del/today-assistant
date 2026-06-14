@@ -524,91 +524,48 @@ function renderMatches(){
   }).join('');
 }
 
-// ===== Cloud Sync =====
-let GITHUB_TOKEN=localStorage.getItem('githubToken')||'';
-let cloudGistId=localStorage.getItem('gistId')||'';
+// ===== Storage (IndexedDB - more reliable) =====
+const DB_NAME='TodayAssistant';
+const DB_VERSION=1;
+let db=null;
 
-async function ensureToken(){
-  if(GITHUB_TOKEN)return true;
-  return new Promise(resolve=>{
-    const modal=document.createElement('div');
-    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
-    modal.innerHTML=`
-      <div style="background:#1e293b;border-radius:16px;padding:24px;max-width:360px;width:100%;border:1px solid rgba(255,255,255,.1)">
-        <h3 style="color:#f8fafc;font-size:16px;margin-bottom:8px">🔐 启用云同步</h3>
-        <p style="color:#94a3b8;font-size:12px;margin-bottom:16px">输入GitHub Token以同步数据到云端<br><a href="https://github.com/settings/tokens" target="_blank" style="color:#818cf8">点此生成Token</a>（勾选gist权限）</p>
-        <input type="text" id="token-input" placeholder="ghp_xxxxxxxxxxxx" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#f8fafc;font-size:14px;margin-bottom:12px">
-        <div style="display:flex;gap:8px">
-          <button id="token-ok" style="flex:1;padding:10px;background:#6366f1;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">确认</button>
-          <button id="token-skip" style="flex:1;padding:10px;background:rgba(255,255,255,.05);color:#94a3b8;border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:13px;cursor:pointer">跳过</button>
-        </div>
-      </div>`;
-    document.body.appendChild(modal);
-    
-    document.getElementById('token-ok').onclick=()=>{
-      const val=document.getElementById('token-input').value.trim();
-      if(val&&val.startsWith('ghp_')){
-        GITHUB_TOKEN=val;
-        localStorage.setItem('githubToken',val);
-        modal.remove();
-        resolve(true);
-      }else{
-        document.getElementById('token-input').style.borderColor='#ef4444';
-      }
+function openDB(){
+  return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains('data'))d.createObjectStore('data');
     };
-    document.getElementById('token-skip').onclick=()=>{modal.remove();resolve(false)};
-    document.getElementById('token-input').onkeypress=(e)=>{if(e.key==='Enter')document.getElementById('token-ok').click()};
+    req.onsuccess=e=>{db=e.target.result;resolve(db)};
+    req.onerror=e=>reject(e);
   });
 }
 
-async function cloudSave(key,data){
-  if(!GITHUB_TOKEN)return false;
-  try{
-    const payload={};
-    payload[key]=JSON.stringify(data);
-    
-    if(!cloudGistId){
-      const res=await fetch('https://api.github.com/gists',{
-        method:'POST',
-        headers:{'Authorization':`token ${GITHUB_TOKEN}`,'Content-Type':'application/json'},
-        body:JSON.stringify({description:'Today Assistant Data',files:{'data.json':{content:JSON.stringify(payload)}}})
-      });
-      const gist=await res.json();
-      cloudGistId=gist.id;
-      localStorage.setItem('gistId',cloudGistId);
-    }else{
-      const res=await fetch(`https://api.github.com/gists/${cloudGistId}`,{
-        headers:{'Authorization':`token ${GITHUB_TOKEN}`}
-      });
-      const gist=await res.json();
-      let existing={};
-      if(gist.files&&gist.files['data.json'])existing=JSON.parse(gist.files['data.json'].content);
-      Object.assign(existing,payload);
-      
-      await fetch(`https://api.github.com/gists/${cloudGistId}`,{
-        method:'PATCH',
-        headers:{'Authorization':`token ${GITHUB_TOKEN}`,'Content-Type':'application/json'},
-        body:JSON.stringify({files:{'data.json':{content:JSON.stringify(existing)}}})
-      });
-    }
-    return true;
-  }catch(e){console.error('Cloud save failed:',e);return false}
+async function dbSave(key,value){
+  if(!db)await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction('data','readwrite');
+    tx.objectStore('data').put(value,key);
+    tx.oncomplete=()=>resolve();
+    tx.onerror=e=>reject(e);
+  });
 }
 
-async function cloudLoad(key){
-  if(!GITHUB_TOKEN||!cloudGistId)return null;
-  try{
-    const res=await fetch(`https://api.github.com/gists/${cloudGistId}`,{
-      headers:{'Authorization':`token ${GITHUB_TOKEN}`}
-    });
-    const gist=await res.json();
-    if(gist.files&&gist.files['data.json']){
-      const data=JSON.parse(gist.files['data.json'].content);
-      return data[key]?JSON.parse(data[key]):null;
-    }
-    return null;
-  }catch(e){console.error('Cloud load failed:',e);return null}
+async function dbLoad(key){
+  if(!db)await openDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction('data','readonly');
+    const req=tx.objectStore('data').get(key);
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=e=>reject(e);
+  });
 }
+
+// Wrapper functions
+function saveTodosLocal(){try{dbSave('todos',todos).catch(()=>{})}catch(e){}}
+function saveWallLocal(){try{dbSave('wallPosts',wallPosts).catch(()=>{})}catch(e){}}
+async function loadTodosLocal(){try{return await dbLoad('todos')||[]}catch(e){return[]}}
+async function loadWallLocal(){try{return await dbLoad('wallPosts')||[]}catch(e){return[]}}
 
 async function saveTodos(){
   try{localStorage.setItem('todos',JSON.stringify(todos))}catch(e){}
@@ -661,27 +618,22 @@ function addTodo(){
   const text=inp.value.trim();
   if(!text)return;
   todos.unshift({id:Date.now(),text,pri:curPri,done:false,time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})});
-  // 同步保存到本地
-  try{localStorage.setItem('todos',JSON.stringify(todos))}catch(e){console.error('Local save failed:',e)}
+  saveTodosLocal();
   renderTodo();
   inp.value='';
-  // 异步云同步
-  if(GITHUB_TOKEN)cloudSave('todos',todos).catch(()=>{});
 }
 
 function toggleTodo(id){
   const todo=todos.find(t=>t.id===id);
   if(todo)todo.done=!todo.done;
-  try{localStorage.setItem('todos',JSON.stringify(todos))}catch(e){}
+  saveTodosLocal();
   renderTodo();
-  if(GITHUB_TOKEN)cloudSave('todos',todos).catch(()=>{});
 }
 
 function delTodo(id){
   todos=todos.filter(t=>t.id!==id);
-  try{localStorage.setItem('todos',JSON.stringify(todos))}catch(e){}
+  saveTodosLocal();
   renderTodo();
-  if(GITHUB_TOKEN)cloudSave('todos',todos).catch(()=>{});
 }
 function filterTodo(f,btn){curFilter=f;document.querySelectorAll('.todo-filter').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTodo()}
 
@@ -717,10 +669,9 @@ function postWall(){
   const text=inp.value.trim();
   if(!text)return;
   wallPosts.unshift({id:Date.now(),userId:getMyId(),text,emoji:getEmoji(),color:getColor(getMyId()),likes:0,likedBy:[],time:Date.now()});
-  try{localStorage.setItem('wallPosts',JSON.stringify(wallPosts))}catch(e){}
+  saveWallLocal();
   renderWall();
   inp.value='';
-  if(GITHUB_TOKEN)cloudSave('wallPosts',wallPosts).catch(()=>{});
 }
 
 function likeWall(id){
@@ -729,9 +680,8 @@ function likeWall(id){
   const mid=getMyId();
   if(post.likedBy.includes(mid)){post.likedBy=post.likedBy.filter(i=>i!==mid);post.likes--}
   else{post.likedBy.push(mid);post.likes++}
-  try{localStorage.setItem('wallPosts',JSON.stringify(wallPosts))}catch(e){}
+  saveWallLocal();
   renderWall();
-  if(GITHUB_TOKEN)cloudSave('wallPosts',wallPosts).catch(()=>{});
 }
 
 function renderWall(){
@@ -750,16 +700,28 @@ function renderWall(){
 }
 
 // ===== Init =====
-updateClock();setInterval(updateClock,1000);
-updateCountdown();setInterval(updateCountdown,1000);
-fetchWeather();setInterval(fetchWeather,600000);
-renderMatches();renderTodo();
-getMyId();renderEmojiBar();renderWall();
+async function initApp(){
+  // Open database first
+  await openDB();
+  
+  // Load data from IndexedDB
+  const savedTodos=await loadTodosLocal();
+  if(savedTodos.length>0)todos=savedTodos;
+  
+  const savedPosts=await loadWallLocal();
+  if(savedPosts.length>0)wallPosts=savedPosts;
+  
+  // Render UI
+  updateClock();setInterval(updateClock,1000);
+  updateCountdown();setInterval(updateCountdown,1000);
+  fetchWeather();setInterval(fetchWeather,600000);
+  renderMatches();renderTodo();
+  getMyId();renderEmojiBar();renderWall();
+  
+  if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').then(r=>r.update()).catch(()=>{})}
+}
 
-// Load cloud data
-setTimeout(()=>loadCloudData(),1500);
-
-if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').then(r=>r.update()).catch(()=>{})}
+initApp();
 </script>
 </body>
 </html>
