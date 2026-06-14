@@ -661,11 +661,28 @@ function addTodo(){
   const text=inp.value.trim();
   if(!text)return;
   todos.unshift({id:Date.now(),text,pri:curPri,done:false,time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})});
-  saveTodos();renderTodo();inp.value='';
+  // 同步保存到本地
+  try{localStorage.setItem('todos',JSON.stringify(todos))}catch(e){console.error('Local save failed:',e)}
+  renderTodo();
+  inp.value='';
+  // 异步云同步
+  if(GITHUB_TOKEN)cloudSave('todos',todos).catch(()=>{});
 }
 
-function toggleTodo(id){todos.find(t=>t.id===id).done=!todos.find(t=>t.id===id).done;saveTodos();renderTodo()}
-function delTodo(id){todos=todos.filter(t=>t.id!==id);saveTodos();renderTodo()}
+function toggleTodo(id){
+  const todo=todos.find(t=>t.id===id);
+  if(todo)todo.done=!todo.done;
+  try{localStorage.setItem('todos',JSON.stringify(todos))}catch(e){}
+  renderTodo();
+  if(GITHUB_TOKEN)cloudSave('todos',todos).catch(()=>{});
+}
+
+function delTodo(id){
+  todos=todos.filter(t=>t.id!==id);
+  try{localStorage.setItem('todos',JSON.stringify(todos))}catch(e){}
+  renderTodo();
+  if(GITHUB_TOKEN)cloudSave('todos',todos).catch(()=>{});
+}
 function filterTodo(f,btn){curFilter=f;document.querySelectorAll('.todo-filter').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTodo()}
 
 function renderTodo(){
@@ -700,7 +717,10 @@ function postWall(){
   const text=inp.value.trim();
   if(!text)return;
   wallPosts.unshift({id:Date.now(),userId:getMyId(),text,emoji:getEmoji(),color:getColor(getMyId()),likes:0,likedBy:[],time:Date.now()});
-  saveWall();renderWall();inp.value='';
+  try{localStorage.setItem('wallPosts',JSON.stringify(wallPosts))}catch(e){}
+  renderWall();
+  inp.value='';
+  if(GITHUB_TOKEN)cloudSave('wallPosts',wallPosts).catch(()=>{});
 }
 
 function likeWall(id){
@@ -709,7 +729,9 @@ function likeWall(id){
   const mid=getMyId();
   if(post.likedBy.includes(mid)){post.likedBy=post.likedBy.filter(i=>i!==mid);post.likes--}
   else{post.likedBy.push(mid);post.likes++}
-  saveWall();renderWall();
+  try{localStorage.setItem('wallPosts',JSON.stringify(wallPosts))}catch(e){}
+  renderWall();
+  if(GITHUB_TOKEN)cloudSave('wallPosts',wallPosts).catch(()=>{});
 }
 
 function renderWall(){
