@@ -611,18 +611,17 @@ async function cloudLoad(key){
 }
 
 async function saveTodos(){
-  localStorage.setItem('todos',JSON.stringify(todos));
-  if(GITHUB_TOKEN)await cloudSave('todos',todos);
+  try{localStorage.setItem('todos',JSON.stringify(todos))}catch(e){}
+  if(GITHUB_TOKEN){try{await cloudSave('todos',todos)}catch(e){console.log('Cloud save error:',e)}}
 }
 
 async function saveWall(){
-  localStorage.setItem('wallPosts',JSON.stringify(wallPosts));
-  if(GITHUB_TOKEN)await cloudSave('wallPosts',wallPosts);
+  try{localStorage.setItem('wallPosts',JSON.stringify(wallPosts))}catch(e){}
+  if(GITHUB_TOKEN){try{await cloudSave('wallPosts',wallPosts)}catch(e){console.log('Cloud save error:',e)}}
 }
 
 async function loadCloudData(){
   if(!GITHUB_TOKEN){
-    // First time: ask for token
     const hasToken=await ensureToken();
     if(!hasToken)return;
   }
@@ -630,19 +629,19 @@ async function loadCloudData(){
   try{
     const cloudTodos=await cloudLoad('todos');
     if(cloudTodos&&cloudTodos.length>0){
-      const localTodos=JSON.parse(localStorage.getItem('todos'))||[];
+      const localTodos=JSON.parse(localStorage.getItem('todos')||'[]');
       const merged=mergeData(localTodos,cloudTodos);
       todos=merged;
-      localStorage.setItem('todos',JSON.stringify(todos));
+      try{localStorage.setItem('todos',JSON.stringify(todos))}catch(e){}
       renderTodo();
     }
     
     const cloudPosts=await cloudLoad('wallPosts');
     if(cloudPosts&&cloudPosts.length>0){
-      const localPosts=JSON.parse(localStorage.getItem('wallPosts'))||[];
+      const localPosts=JSON.parse(localStorage.getItem('wallPosts')||'[]');
       const merged=mergeData(localPosts,cloudPosts);
       wallPosts=merged;
-      localStorage.setItem('wallPosts',JSON.stringify(wallPosts));
+      try{localStorage.setItem('wallPosts',JSON.stringify(wallPosts))}catch(e){}
       renderWall();
     }
   }catch(e){console.error('Cloud load failed:',e)}
