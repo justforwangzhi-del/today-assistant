@@ -12,716 +12,484 @@
 <title>今日助手</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --primary:#6366f1;--primary-light:#818cf8;--primary-dark:#4f46e5;
-  --secondary:#ec4899;--accent:#06b6d4;
-  --success:#10b981;--warning:#f59e0b;--danger:#ef4444;
-  --text:#0f172a;--text-secondary:#475569;--text-muted:#94a3b8;
-  --bg-start:#0f172a;--bg-end:#1e293b;
-  --card:rgba(255,255,255,.08);--card-hover:rgba(255,255,255,.12);
-  --border:rgba(255,255,255,.1);--border-light:rgba(255,255,255,.15);
-  --shadow:0 8px 32px rgba(0,0,0,.3);
-  --radius:20px;--radius-sm:12px;--radius-xs:8px;
-  --safe-top:env(safe-area-inset-top,20px);
-  --safe-bottom:env(safe-area-inset-bottom,0px);
-}
-html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
-body{
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
-  min-height:100vh;min-height:100dvh;
-  padding:12px;padding-top:calc(12px + var(--safe-top));
-  padding-bottom:calc(12px + var(--safe-bottom));
-  color:#f8fafc;
-  background:linear-gradient(135deg,var(--bg-start),var(--bg-end),#0f172a);
-  background-attachment:fixed;position:relative;overflow-x:hidden;
-  line-height:1.5;-webkit-font-smoothing:antialiased;
-  -webkit-tap-highlight-color:transparent;
-}
-
-/* Background */
-.bg-effects{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
-.bg-orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.35;animation:orbFloat 20s ease-in-out infinite}
-.bg-orb-1{width:400px;height:400px;background:linear-gradient(135deg,#6366f1,#8b5cf6);top:-150px;left:-150px}
-.bg-orb-2{width:350px;height:350px;background:linear-gradient(135deg,#ec4899,#f472b6);bottom:-100px;right:-100px;animation-delay:-7s}
-.bg-orb-3{width:250px;height:250px;background:linear-gradient(135deg,#06b6d4,#22d3ee);top:50%;left:50%;animation-delay:-14s}
-@keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(40px,-40px) scale(1.08)}66%{transform:translate(-25px,25px) scale(.92)}}
-.bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.015) 1px,transparent 1px);background-size:50px 50px}
-
-/* Container */
-.container{max-width:100%;margin:0 auto;position:relative;z-index:1}
+:root{--primary:#6366f1;--secondary:#ec4899;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--text:#f8fafc;--text-muted:#94a3b8;--card:rgba(255,255,255,.08);--border:rgba(255,255,255,.1);--radius:16px;--radius-sm:10px;--safe-top:env(safe-area-inset-top,20px);--safe-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,sans-serif;min-height:100vh;min-height:100dvh;padding:12px;padding-top:calc(12px + var(--safe-top));padding-bottom:calc(12px + var(--safe-bottom));color:var(--text);background:linear-gradient(135deg,#0f172a,#1e293b,#0f172a);background-attachment:fixed;-webkit-tap-highlight-color:transparent}
+.bg-orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.bg-orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.3;animation:orbFloat 20s ease-in-out infinite}
+.bg-orb:nth-child(1){width:400px;height:400px;background:#6366f1;top:-150px;left:-150px}
+.bg-orb:nth-child(2){width:350px;height:350px;background:#ec4899;bottom:-100px;right:-100px;animation-delay:-7s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-30px)}}
+.container{max-width:100%;position:relative;z-index:1}
 
 /* Header */
 .header{display:flex;justify-content:space-between;align-items:center;padding:4px 0 12px}
 .header h1{font-size:20px;font-weight:800;background:linear-gradient(135deg,#f8fafc,#94a3b8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.header-time{font-size:32px;font-weight:700;font-variant-numeric:tabular-nums;background:linear-gradient(135deg,#f8fafc,#cbd5e1);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.header-time{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;background:linear-gradient(135deg,#f8fafc,#cbd5e1);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .header-date{font-size:11px;color:var(--text-muted);text-align:right}
 
-/* Countdown Card */
-.countdown-card{
-  background:linear-gradient(135deg,rgba(16,185,129,.2) 0%,rgba(6,182,212,.15) 100%);
-  border:1px solid rgba(16,185,129,.3);border-radius:var(--radius);
-  padding:16px 20px;margin-bottom:12px;position:relative;overflow:hidden;
-}
-.countdown-card::before{content:'';position:absolute;top:-50%;right:-20%;width:200px;height:200px;background:radial-gradient(circle,rgba(16,185,129,.15) 0%,transparent 70%);pointer-events:none}
-.countdown-label{font-size:12px;color:rgba(255,255,255,.6);margin-bottom:6px;display:flex;align-items:center;gap:6px}
-.countdown-main{display:flex;align-items:baseline;gap:12px}
-.countdown-time{font-size:42px;font-weight:800;letter-spacing:-1px;color:#f8fafc;font-variant-numeric:tabular-nums}
-.countdown-unit{font-size:14px;color:rgba(255,255,255,.5);font-weight:500}
-.countdown-sub{font-size:12px;color:rgba(255,255,255,.4);margin-top:4px}
-.countdown-progress{height:4px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:12px;overflow:hidden}
-.countdown-bar{height:100%;background:linear-gradient(90deg,#10b981,#06b6d4);border-radius:2px;transition:width 1s linear}
+/* Countdown */
+.countdown{background:linear-gradient(135deg,rgba(16,185,129,.2),rgba(6,182,212,.15));border:1px solid rgba(16,185,129,.3);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px}
+.countdown.weekend{background:linear-gradient(135deg,rgba(139,92,246,.2),rgba(236,72,153,.15));border-color:rgba(139,92,246,.3)}
+.countdown-label{font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px}
+.countdown-time{font-size:36px;font-weight:800;letter-spacing:-1px}
+.countdown-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
+.countdown-bar{height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:10px;overflow:hidden}
+.countdown-fill{height:100%;background:linear-gradient(90deg,#10b981,#06b6d4);border-radius:2px;transition:width 1s linear}
 
 /* Glass Card */
-.glass-card{
-  background:var(--card);backdrop-filter:blur(20px) saturate(180%);
-  -webkit-backdrop-filter:blur(20px) saturate(180%);
-  border:1px solid var(--border);border-radius:var(--radius);
-  padding:16px;transition:all .3s;
-  box-shadow:0 4px 24px rgba(0,0,0,.1),inset 0 1px 0 rgba(255,255,255,.05);
-  margin-bottom:12px;
-}
-.glass-card:last-child{margin-bottom:0}
-
-/* Section */
-.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.section-title{font-size:15px;font-weight:700;display:flex;align-items:center;gap:8px}
-.section-badge{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;font-size:9px;padding:3px 8px;border-radius:12px;font-weight:600;letter-spacing:.5px;text-transform:uppercase}
-.section-link{color:var(--text-muted);font-size:11px;text-decoration:none;display:flex;align-items:center;gap:4px}
-.section-link:hover{color:#f8fafc}
+.card{background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.card-title{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px}
+.badge{font-size:9px;padding:2px 6px;border-radius:8px;font-weight:600;color:#fff}
+.card-link{font-size:11px;color:var(--text-muted);text-decoration:none}
+.stats{display:flex;gap:8px;font-size:10px;color:var(--text-muted)}
+.stats strong{color:#e2e8f0}
 
 /* Weather */
-.weather-main{display:flex;align-items:center;gap:16px;margin-bottom:8px}
-.weather-icon{font-size:48px;animation:weatherPulse 3s ease-in-out infinite}
-@keyframes weatherPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
-.weather-temp{font-size:40px;font-weight:800;line-height:1;letter-spacing:-1px}
-.weather-temp span{font-size:18px;font-weight:400;opacity:.7}
-.weather-info{flex:1}
-.weather-desc{font-size:16px;font-weight:600;margin-bottom:4px}
-.weather-detail{font-size:12px;color:rgba(255,255,255,.6);line-height:1.6}
-.weather-location{font-size:11px;color:rgba(255,255,255,.4);margin-top:6px;display:flex;align-items:center;gap:4px}
-.weather-alerts{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;gap:6px}
-.alert-item{font-size:11px;padding:8px 10px;background:rgba(255,255,255,.04);border-radius:var(--radius-xs);border:1px solid rgba(255,255,255,.04)}
+.weather-row{display:flex;align-items:center;gap:12px}
+.weather-icon{font-size:42px}
+.weather-temp{font-size:36px;font-weight:800;line-height:1}
+.weather-temp span{font-size:16px;font-weight:400;opacity:.6}
+.weather-desc{font-size:14px;font-weight:600}
+.weather-detail{font-size:11px;color:rgba(255,255,255,.5)}
+.weather-loc{font-size:10px;color:rgba(255,255,255,.4);margin-top:4px}
 
 /* Grid */
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:600px){.grid{grid-template-columns:1fr}}
 
-/* Match List */
-.match-list{display:flex;flex-direction:column;gap:8px}
-.match-item{
-  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);
-  border-radius:var(--radius-sm);padding:12px;transition:all .25s;
-  position:relative;overflow:hidden;
-}
-.match-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--primary),var(--secondary));opacity:0;transition:opacity .25s}
-.match-item:hover{background:rgba(255,255,255,.06);transform:translateX(3px)}
-.match-item:hover::before{opacity:1}
-.match-league{font-size:9px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
-.match-teams{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.team{display:flex;align-items:center;gap:8px;flex:1}
-.team.right{flex-direction:row-reverse;text-align:right}
-.team-logo{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#f8fafc;border:1px solid rgba(255,255,255,.1)}
-.team-name{font-size:12px;font-weight:600;color:#e2e8f0}
-.match-vs{font-size:10px;font-weight:800;color:var(--text-muted);letter-spacing:1px}
-.match-meta{text-align:center;margin-top:8px}
-.match-time{display:inline-block;font-size:11px;font-weight:600;color:var(--primary-light);background:rgba(99,102,241,.15);padding:3px 10px;border-radius:12px}
-.match-status{font-size:10px;color:var(--success);font-weight:600;margin-top:4px}
+/* Match */
+.match{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.04);border-radius:var(--radius-sm);padding:10px;margin-bottom:6px}
+.match-league{font-size:9px;color:var(--text-muted);font-weight:700;letter-spacing:.5px;margin-bottom:6px}
+.match-teams{display:flex;align-items:center;justify-content:space-between}
+.team{display:flex;align-items:center;gap:6px}
+.team.r{flex-direction:row-reverse}
+.team-logo{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;border:1px solid rgba(255,255,255,.1)}
+.team-name{font-size:11px;font-weight:600}
+.match-vs{font-size:9px;font-weight:800;color:var(--text-muted)}
+.match-time{text-align:center;margin-top:6px}
+.match-time span{font-size:10px;font-weight:600;color:#818cf8;background:rgba(99,102,241,.15);padding:2px 8px;border-radius:8px}
+.match-status{font-size:9px;color:var(--success);font-weight:600;margin-top:4px}
 .match-status.live{color:var(--danger);animation:pulse 1.5s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
 
-/* Todo */
-.todo-input-group{display:flex;gap:6px;margin-bottom:10px}
-.todo-input{flex:1;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-xs);font-size:13px;color:#f8fafc;outline:none}
-.todo-input:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(99,102,241,.2)}
-.todo-input::placeholder{color:var(--text-muted)}
-.todo-btn{padding:10px 14px;background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:#fff;border:none;border-radius:var(--radius-xs);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
-.todo-btn:hover{transform:translateY(-1px);box-shadow:0 3px 12px rgba(99,102,241,.3)}
-.priority-select{display:flex;gap:3px}
-.pri-btn{width:28px;height:28px;border:1px solid rgba(255,255,255,.1);border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:11px;background:transparent;transition:all .2s}
-.pri-btn.active{border-color:var(--primary);background:rgba(99,102,241,.2)}
-.todo-filters{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
-.todo-filter{padding:4px 10px;border:1px solid rgba(255,255,255,.08);border-radius:12px;font-size:10px;cursor:pointer;background:transparent;color:var(--text-muted);transition:all .2s}
-.todo-filter.active{background:var(--primary);border-color:var(--primary);color:#fff}
-.todo-stats{display:flex;gap:10px;font-size:10px;color:var(--text-muted)}
-.todo-stats strong{color:#e2e8f0}
-.todo-list{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto}
-.todo-list::-webkit-scrollbar{width:3px}
-.todo-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
-.todo-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.04);border-radius:var(--radius-xs);transition:all .2s}
-.todo-item:hover{background:rgba(255,255,255,.06)}
-.todo-check{width:16px;height:16px;border:2px solid rgba(255,255,255,.2);border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
-.todo-check.done{background:var(--success);border-color:var(--success)}
-.todo-check.done::after{content:'✓';color:#fff;font-size:10px;font-weight:700}
-.todo-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
-.todo-dot.high{background:var(--danger);box-shadow:0 0 6px var(--danger)}
-.todo-dot.medium{background:var(--warning)}
-.todo-dot.low{background:var(--success)}
-.todo-content{flex:1;min-width:0}
-.todo-text{font-size:12px;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.todo-item.completed .todo-text{text-decoration:line-through;color:var(--text-muted)}
-.todo-time{font-size:9px;color:var(--text-muted);margin-top:1px}
-.todo-del{width:20px;height:20px;border:none;background:none;color:var(--text-muted);cursor:pointer;border-radius:4px;font-size:12px;flex-shrink:0}
-.todo-del:hover{color:var(--danger)}
-.todo-empty{text-align:center;padding:24px;color:var(--text-muted);font-size:12px}
+/* Input Group */
+.input-group{display:flex;gap:6px;margin-bottom:8px}
+.input{flex:1;padding:8px 10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-sm);font-size:12px;color:var(--text);outline:none}
+.input:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(99,102,241,.2)}
+.input::placeholder{color:var(--text-muted)}
+.btn{padding:8px 12px;background:linear-gradient(135deg,var(--primary),#4f46e5);color:#fff;border:none;border-radius:var(--radius-sm);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap}
+.btn.pink{background:linear-gradient(135deg,#8b5cf6,#6366f1)}
+.btn:hover{transform:translateY(-1px)}
+
+/* Priority */
+.pri-group{display:flex;gap:2px}
+.pri{width:24px;height:24px;border:1px solid rgba(255,255,255,.1);border-radius:5px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:10px;background:transparent}
+.pri.active{border-color:var(--primary);background:rgba(99,102,241,.2)}
+
+/* Filters */
+.filters{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
+.filter{padding:3px 8px;border:1px solid rgba(255,255,255,.08);border-radius:10px;font-size:9px;cursor:pointer;background:transparent;color:var(--text-muted)}
+.filter.active{background:var(--primary);border-color:var(--primary);color:#fff}
+
+/* List */
+.list{display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto}
+.list::-webkit-scrollbar{width:3px}
+.list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+.item{display:flex;align-items:center;gap:6px;padding:7px 8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.04);border-radius:var(--radius-sm)}
+.check{width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-radius:3px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.check.done{background:var(--success);border-color:var(--success)}
+.check.done::after{content:'✓';color:#fff;font-size:9px;font-weight:700}
+.dot{width:4px;height:4px;border-radius:50%;flex-shrink:0}
+.dot.high{background:var(--danger);box-shadow:0 0 4px var(--danger)}
+.dot.medium{background:var(--warning)}
+.dot.low{background:var(--success)}
+.item-content{flex:1;min-width:0}
+.item-text{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item.completed .item-text{text-decoration:line-through;color:var(--text-muted)}
+.item-time{font-size:8px;color:var(--text-muted)}
+.del{width:18px;height:18px;border:none;background:none;color:var(--text-muted);cursor:pointer;font-size:11px;flex-shrink:0}
+.del:hover{color:var(--danger)}
+.empty{text-align:center;padding:20px;color:var(--text-muted);font-size:11px}
 
 /* Wall */
-.wall-input-wrap{display:flex;gap:6px;margin-bottom:10px}
-.wall-input{flex:1;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-xs);font-size:13px;color:#f8fafc;outline:none}
-.wall-input:focus{border-color:var(--secondary);box-shadow:0 0 0 2px rgba(236,72,153,.2)}
-.wall-input::placeholder{color:var(--text-muted)}
-.wall-btn{padding:10px 14px;background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;border:none;border-radius:var(--radius-xs);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
-.wall-emoji-bar{display:flex;gap:4px;margin-bottom:10px}
-.emoji-btn{width:30px;height:30px;border:1px solid rgba(255,255,255,.08);border-radius:6px;background:rgba(255,255,255,.03);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
-.emoji-btn:hover{background:rgba(255,255,255,.1)}
-.wall-list{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow-y:auto}
-.wall-list::-webkit-scrollbar{width:3px}
-.wall-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
-.wall-post{padding:10px 12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.04);border-radius:var(--radius-xs);position:relative;overflow:hidden}
-.wall-post::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:2px}
-.wall-post:nth-child(4n+1)::before{background:linear-gradient(180deg,#6366f1,#8b5cf6)}
-.wall-post:nth-child(4n+2)::before{background:linear-gradient(180deg,#ec4899,#f472b6)}
-.wall-post:nth-child(4n+3)::before{background:linear-gradient(180deg,#06b6d4,#22d3ee)}
-.wall-post:nth-child(4n)::before{background:linear-gradient(180deg,#10b981,#34d399)}
+.wall-post{padding:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.04);border-radius:var(--radius-sm);margin-bottom:6px;position:relative;border-left:3px solid}
+.wall-post:nth-child(3n+1){border-left-color:#6366f1}
+.wall-post:nth-child(3n+2){border-left-color:#ec4899}
+.wall-post:nth-child(3n){border-left-color:#06b6d4}
 .wall-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
-.wall-user{display:flex;align-items:center;gap:6px}
-.wall-avatar{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px}
-.wall-name{font-size:10px;font-weight:600;color:var(--text-muted)}
-.wall-time{font-size:9px;color:var(--text-muted)}
-.wall-content{font-size:12px;color:#e2e8f0;line-height:1.5}
-.wall-actions{margin-top:6px}
-.wall-action{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:var(--text-muted);cursor:pointer;background:none;border:none;padding:0}
-.wall-action:hover{color:var(--secondary)}
+.wall-user{display:flex;align-items:center;gap:5px}
+.wall-avatar{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px}
+.wall-name{font-size:9px;font-weight:600;color:var(--text-muted)}
+.wall-time{font-size:8px;color:var(--text-muted)}
+.wall-content{font-size:11px;line-height:1.4}
+.wall-action{display:inline-flex;align-items:center;gap:2px;font-size:10px;color:var(--text-muted);cursor:pointer;background:none;border:none;padding:0;margin-top:4px}
 .wall-action.liked{color:var(--danger)}
-.wall-empty{text-align:center;padding:24px;color:var(--text-muted);font-size:12px}
+.emoji-bar{display:flex;gap:3px;margin-bottom:8px}
+.emoji-btn{width:26px;height:26px;border:1px solid rgba(255,255,255,.08);border-radius:5px;background:rgba(255,255,255,.03);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center}
 
-/* Animations */
-.fade-up{opacity:0;transform:translateY(16px);animation:fadeUp .5s ease forwards}
-@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
+/* Sync Status */
+.sync-status{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:6px 14px;border-radius:20px;font-size:11px;z-index:100;opacity:0;transition:opacity .3s}
+.sync-status.show{opacity:1}
 
 /* Footer */
-.footer{text-align:center;padding:20px 0;font-size:10px;color:var(--text-muted)}
+.footer{text-align:center;padding:16px 0;font-size:9px;color:var(--text-muted)}
 
-/* Mobile */
-@media(max-width:480px){
-  body{padding:10px;padding-top:calc(10px + var(--safe-top))}
-  .header{padding:2px 0 10px}
-  .header h1{font-size:18px}
-  .header-time{font-size:28px}
-  .countdown-time{font-size:36px}
-  .glass-card{padding:14px;border-radius:16px}
-  .weather-icon{font-size:40px}
-  .weather-temp{font-size:34px}
-  .weather-desc{font-size:14px}
-}
-
-/* PWA */
-@media(display-mode:standalone){body{padding-top:calc(12px + var(--safe-top) + 16px)}}
-@supports(padding-top:env(safe-area-inset-top)){body{padding-top:calc(12px + env(safe-area-inset-top))}}
+/* Animations */
+.fade{opacity:0;transform:translateY(12px);animation:fadeUp .4s ease forwards}
+@keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
 
-<div class="bg-effects">
-  <div class="bg-orb bg-orb-1"></div>
-  <div class="bg-orb bg-orb-2"></div>
-  <div class="bg-orb bg-orb-3"></div>
-  <div class="bg-grid"></div>
-</div>
+<div class="bg-orbs"><div class="bg-orb"></div><div class="bg-orb"></div></div>
+<div class="sync-status" id="sync-status">✓ 已同步</div>
 
 <div class="container">
-  <!-- Header -->
-  <div class="header fade-up">
-    <div>
-      <h1>Today</h1>
-    </div>
-    <div>
-      <div class="header-time" id="header-time">00:00</div>
-      <div class="header-date" id="header-date"></div>
+  <div class="header fade">
+    <div><h1>Today</h1></div>
+    <div><div class="header-time" id="clock">00:00</div><div class="header-date" id="date"></div></div>
+  </div>
+
+  <div class="countdown fade" style="animation-delay:.05s" id="countdown">
+    <div class="countdown-label" id="cd-label">⏰ 下班倒计时</div>
+    <div class="countdown-time" id="cd-time">00:00:00</div>
+    <div class="countdown-sub" id="cd-sub">加载中...</div>
+    <div class="countdown-bar"><div class="countdown-fill" id="cd-bar" style="width:0%"></div></div>
+  </div>
+
+  <div class="card fade" style="animation-delay:.1s">
+    <div class="weather-row">
+      <div class="weather-icon" id="w-icon">🌤️</div>
+      <div><div class="weather-temp" id="w-temp">--<span>°C</span></div></div>
+      <div style="flex:1"><div class="weather-desc" id="w-desc">加载中...</div><div class="weather-detail" id="w-detail"></div><div class="weather-loc" id="w-loc">📍 定位中...</div></div>
     </div>
   </div>
 
-  <!-- Countdown -->
-  <div class="countdown-card fade-up" style="animation-delay:.05s">
-    <div class="countdown-label">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      下班倒计时
-    </div>
-    <div class="countdown-main">
-      <div class="countdown-time" id="countdown-time">00:00:00</div>
-    </div>
-    <div class="countdown-sub" id="countdown-sub">距离下班还有...</div>
-    <div class="countdown-progress">
-      <div class="countdown-bar" id="countdown-bar" style="width:0%"></div>
-    </div>
-  </div>
-
-  <!-- Weather -->
-  <div class="glass-card fade-up" style="animation-delay:.1s">
-    <div class="weather-main">
-      <div class="weather-icon" id="weather-icon">🌤️</div>
-      <div>
-        <div class="weather-temp" id="weather-temp">--<span>°C</span></div>
-      </div>
-      <div class="weather-info">
-        <div class="weather-desc" id="weather-desc">加载中...</div>
-        <div class="weather-detail" id="weather-detail"></div>
-        <div class="weather-location" id="weather-location">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-          定位中...
-        </div>
-      </div>
-    </div>
-    <div class="weather-alerts" id="weather-alerts"></div>
-  </div>
-
-  <!-- Grid -->
   <div class="grid">
-    <!-- Esports -->
-    <div class="glass-card fade-up" style="animation-delay:.15s">
-      <div class="section-header">
-        <div class="section-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-          电竞赛事
-        </div>
-        <a class="section-link" href="https://lpl.qq.com" target="_blank">更多 →</a>
+    <div class="card fade" style="animation-delay:.15s">
+      <div class="card-header">
+        <div class="card-title">🏆 电竞赛事</div>
+        <a class="card-link" href="https://lpl.qq.com" target="_blank">更多 →</a>
       </div>
-      <div class="match-list" id="match-list"></div>
+      <div id="match-list"></div>
     </div>
 
-    <!-- Todo -->
-    <div class="glass-card fade-up" style="animation-delay:.2s">
-      <div class="section-header">
-        <div class="section-title">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          每日待办
-        </div>
-        <div class="todo-stats">
-          <span>📋 <strong id="todo-total">0</strong></span>
-          <span>✅ <strong id="todo-done">0</strong></span>
-        </div>
+    <div class="card fade" style="animation-delay:.2s">
+      <div class="card-header">
+        <div class="card-title">📝 每日待办</div>
+        <div class="stats"><span>📋 <strong id="t-total">0</strong></span><span>✅ <strong id="t-done">0</strong></span></div>
       </div>
-      <div class="todo-input-group">
-        <input type="text" class="todo-input" id="todo-input" placeholder="添加待办..." maxlength="100" onkeypress="if(event.key==='Enter')addTodo()">
-        <div class="priority-select">
-          <button class="pri-btn" data-p="low" onclick="setPri('low')">🟢</button>
-          <button class="pri-btn active" data-p="medium" onclick="setPri('medium')">🟡</button>
-          <button class="pri-btn" data-p="high" onclick="setPri('high')">🔴</button>
+      <div class="input-group">
+        <input type="text" class="input" id="todo-input" placeholder="添加待办..." maxlength="100">
+        <div class="pri-group">
+          <button class="pri" data-p="low" onclick="setPri('low')">🟢</button>
+          <button class="pri active" data-p="medium" onclick="setPri('medium')">🟡</button>
+          <button class="pri" data-p="high" onclick="setPri('high')">🔴</button>
         </div>
-        <button class="todo-btn" onclick="addTodo()">+</button>
+        <button class="btn" onclick="addTodo()">+</button>
       </div>
-      <div class="todo-filters">
-        <button class="todo-filter active" onclick="filterTodo('all',this)">全部</button>
-        <button class="todo-filter" onclick="filterTodo('pending',this)">待办</button>
-        <button class="todo-filter" onclick="filterTodo('completed',this)">完成</button>
+      <div class="filters">
+        <button class="filter active" onclick="filterTodo('all',this)">全部</button>
+        <button class="filter" onclick="filterTodo('pending',this)">待办</button>
+        <button class="filter" onclick="filterTodo('done',this)">完成</button>
       </div>
-      <div class="todo-list" id="todo-list"></div>
+      <div class="list" id="todo-list"></div>
     </div>
   </div>
 
-  <!-- Wall -->
-  <div class="glass-card fade-up" style="animation-delay:.25s">
-    <div class="section-header">
-      <div class="section-title">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-        匿名吐槽墙
-        <span class="section-badge" style="background:linear-gradient(135deg,#8b5cf6,#6366f1)">👹</span>
-      </div>
-      <div class="todo-stats">
-        <span>💬 <strong id="wall-total">0</strong></span>
-        <span>❤️ <strong id="wall-likes">0</strong></span>
-      </div>
+  <div class="card fade" style="animation-delay:.25s">
+    <div class="card-header">
+      <div class="card-title">👹 匿名吐槽墙 <span class="badge" style="background:linear-gradient(135deg,#8b5cf6,#6366f1)">ANON</span></div>
+      <div class="stats"><span>💬 <strong id="w-total">0</strong></span><span>❤️ <strong id="w-likes">0</strong></span></div>
     </div>
-    <div class="wall-input-wrap">
-      <input type="text" class="wall-input" id="wall-input" placeholder="想吐槽点什么？" maxlength="200" onkeypress="if(event.key==='Enter')postWall()">
-      <button class="wall-btn" onclick="postWall()">发送</button>
+    <div class="input-group">
+      <input type="text" class="input" id="wall-input" placeholder="想吐槽点什么？" maxlength="200">
+      <button class="btn pink" onclick="postWall()">发送</button>
     </div>
-    <div class="wall-emoji-bar" id="wall-emoji-bar"></div>
-    <div class="wall-list" id="wall-list"></div>
+    <div class="emoji-bar" id="emoji-bar"></div>
+    <div class="list" id="wall-list"></div>
   </div>
 
   <div class="footer">Today Assistant · Made with ❤️</div>
 </div>
 
 <script>
+// ===== Config =====
+const GITHUB_TOKEN_KEY='gh_token';
+const GIST_ID_KEY='gh_gist_id';
+
+// ===== IndexedDB =====
+let db=null;
+async function openDB(){
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open('TodayApp',1);
+    r.onupgradeneeded=e=>{if(!e.target.result.objectStoreNames.contains('data'))e.target.result.createObjectStore('data')};
+    r.onsuccess=e=>{db=e.target.result;res(db)};
+    r.onerror=e=>rej(e);
+  });
+}
+async function dbPut(k,v){if(!db)await openDB();return new Promise((res,rej)=>{const t=db.transaction('data','readwrite');t.objectStore('data').put(v,k);t.oncomplete=res;t.onerror=rej})}
+async function dbGet(k){if(!db)await openDB();return new Promise((res,rej)=>{const t=db.transaction('data','readonly');const r=t.objectStore('data').get(k);r.onsuccess=()=>res(r.result);r.onerror=rej})}
+
+// ===== Cloud Sync =====
+let token=localStorage.getItem(GITHUB_TOKEN_KEY)||'';
+let gistId=localStorage.getItem(GIST_ID_KEY)||'';
+
+async function ensureToken(){
+  if(token)return true;
+  return new Promise(resolve=>{
+    const m=document.createElement('div');
+    m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    m.innerHTML=`<div style="background:#1e293b;border-radius:16px;padding:20px;max-width:340px;width:100%;border:1px solid rgba(255,255,255,.1)">
+      <h3 style="color:#f8fafc;font-size:15px;margin-bottom:6px">🔐 启用云同步</h3>
+      <p style="color:#94a3b8;font-size:11px;margin-bottom:12px">输入GitHub Token以云端保存数据<br><a href="https://github.com/settings/tokens/new?scopes=gist" target="_blank" style="color:#818cf8">点此生成Token</a></p>
+      <input type="text" id="tk-input" placeholder="ghp_xxxx" style="width:100%;padding:8px 10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#f8fafc;font-size:12px;margin-bottom:10px">
+      <div style="display:flex;gap:6px">
+        <button id="tk-ok" style="flex:1;padding:8px;background:#6366f1;color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer">确认</button>
+        <button id="tk-skip" style="flex:1;padding:8px;background:rgba(255,255,255,.05);color:#94a3b8;border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:12px;cursor:pointer">跳过</button>
+      </div>
+    </div>`;
+    document.body.appendChild(m);
+    document.getElementById('tk-ok').onclick=()=>{const v=document.getElementById('tk-input').value.trim();if(v&&v.startsWith('ghp_')){token=v;localStorage.setItem(GITHUB_TOKEN_KEY,v);m.remove();resolve(true)}else{document.getElementById('tk-input').style.borderColor='#ef4444'}};
+    document.getElementById('tk-skip').onclick=()=>{m.remove();resolve(false)};
+    document.getElementById('tk-input').onkeypress=e=>{if(e.key==='Enter')document.getElementById('tk-ok').click()};
+  });
+}
+
+async function cloudSync(key,data){
+  if(!token)return;
+  try{
+    if(!gistId){
+      const r=await fetch('https://api.github.com/gists',{method:'POST',headers:{'Authorization':`token ${token}`,'Content-Type':'application/json'},body:JSON.stringify({description:'TodayAssistant',files:{'data.json':{content:JSON.stringify({[key]:JSON.stringify(data)})}}})});
+      const g=await r.json();gistId=g.id;localStorage.setItem(GIST_ID_KEY,gistId);
+    }else{
+      const r1=await fetch(`https://api.github.com/gists/${gistId}`,{headers:{'Authorization':`token ${token}`}});
+      const g1=await r1.json();let ex={};if(g1.files&&g1.files['data.json'])ex=JSON.parse(g1.files['data.json'].content);
+      ex[key]=JSON.stringify(data);
+      await fetch(`https://api.github.com/gists/${gistId}`,{method:'PATCH',headers:{'Authorization':`token ${token}`,'Content-Type':'application/json'},body:JSON.stringify({files:{'data.json':{content:JSON.stringify(ex)}}})});
+    }
+    showSync('✓ 已同步到云端');
+  }catch(e){console.error('Sync error:',e)}
+}
+
+async function cloudLoad(key){
+  if(!token||!gistId)return null;
+  try{
+    const r=await fetch(`https://api.github.com/gists/${gistId}`,{headers:{'Authorization':`token ${token}`}});
+    const g=await r.json();
+    if(g.files&&g.files['data.json']){const d=JSON.parse(g.files['data.json'].content);return d[key]?JSON.parse(d[key]):null}
+    return null;
+  }catch(e){return null}
+}
+
+function showSync(msg){
+  const s=document.getElementById('sync-status');s.textContent=msg;s.classList.add('show');
+  setTimeout(()=>s.classList.remove('show'),2000);
+}
+
+// ===== State =====
+let todos=[];
+let wallPosts=[];
+let myId='';
+let curFilter='all',curPri='medium';
+
 // ===== Clock =====
 function updateClock(){
-  const now=new Date();
-  document.getElementById('header-time').textContent=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  const days=['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
-  document.getElementById('header-date').textContent=`${now.getMonth()+1}月${now.getDate()}日 ${days[now.getDay()]}`;
+  const n=new Date();
+  document.getElementById('clock').textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+  const d=['日','一','二','三','四','五','六'];
+  document.getElementById('date').textContent=`${n.getMonth()+1}月${n.getDate()}日 周${d[n.getDay()]}`;
 }
 
 // ===== Countdown =====
 const weekendMsgs=[
-  {text:'恢复元气中',sub:'今天好好休息吧~',icon:'🔋'},
+  {text:'恢复元气中',sub:'今天好好休息~',icon:'🔋'},
   {text:'今日宜睡觉',sub:'赖床是对周末最大的尊重',icon:'😴'},
-  {text:'摸鱼时间到',sub:'放下工作，享受生活',icon:'🐟'},
-  {text:'快乐星球',sub:'今天只做让自己开心的事',icon:'🌟'},
+  {text:'快乐星球',sub:'今天只做开心的事',icon:'🌟'},
   {text:'充电模式',sub:'为下周储备能量',icon:'⚡'},
   {text:'躺平中...',sub:'人生苦短，及时行乐',icon:'🛋️'},
-  {text:'自由日',sub:'没有闹钟的一天真好',icon:'🕊️'},
-  {text:'美食时间',sub:'今天适合吃顿好的',icon:'🍰'},
-  {text:'追剧模式',sub:'窝在沙发上看剧真舒服',icon:'📺'},
-  {text:'运动日',sub:'出去走走，晒晒太阳',icon:'🏃'},
   {text:'游戏时间',sub:'今天可以尽情玩了',icon:'🎮'},
-  {text:'约会日',sub:'去见想见的人吧',icon:'💑'},
 ];
 
 function updateCountdown(){
-  const now=new Date();
-  const h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
-  const day=now.getDay(); // 0=Sun, 6=Sat
+  const n=new Date(),h=n.getHours(),m=n.getMinutes(),s=n.getSeconds(),day=n.getDay();
+  const cd=document.getElementById('countdown'),label=document.getElementById('cd-label');
   
-  const countdownCard=document.querySelector('.countdown-card');
-  const countdownLabel=document.querySelector('.countdown-label');
-  
-  // Weekend or non-workday
   if(day===0||day===6){
-    countdownCard.style.background='linear-gradient(135deg,rgba(139,92,246,.2) 0%,rgba(236,72,153,.15) 100%)';
-    countdownCard.style.borderColor='rgba(139,92,246,.3)';
-    
-    // Pick a message based on date for consistency within the day
-    const seed=(now.getFullYear()*365+now.getMonth()*31+now.getDate())%weekendMsgs.length;
+    cd.className='countdown weekend';
+    const seed=(n.getFullYear()*365+n.getMonth()*31+n.getDate())%weekendMsgs.length;
     const msg=weekendMsgs[seed];
-    
-    countdownLabel.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>${msg.icon} ${msg.text}`;
-    document.getElementById('countdown-time').textContent='🎉 周末愉快';
-    document.getElementById('countdown-sub').textContent=msg.sub;
-    document.getElementById('countdown-bar').style.width='100%';
-    document.getElementById('countdown-bar').style.background='linear-gradient(90deg,#8b5cf6,#ec4899)';
+    label.textContent=`${msg.icon} ${msg.text}`;
+    document.getElementById('cd-time').textContent='🎉 周末愉快';
+    document.getElementById('cd-sub').textContent=msg.sub;
+    document.getElementById('cd-bar').style.width='100%';
+    document.getElementById('cd-bar').style.background='linear-gradient(90deg,#8b5cf6,#ec4899)';
     return;
   }
   
-  // Workday styling
-  countdownCard.style.background='linear-gradient(135deg,rgba(16,185,129,.2) 0%,rgba(6,182,212,.15) 100%)';
-  countdownCard.style.borderColor='rgba(16,185,129,.3)';
-  countdownLabel.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>下班倒计时';
-  document.getElementById('countdown-bar').style.background='linear-gradient(90deg,#10b981,#06b6d4)';
+  cd.className='countdown';
+  label.textContent='⏰ 下班倒计时';
+  document.getElementById('cd-bar').style.background='linear-gradient(90deg,#10b981,#06b6d4)';
   
-  const workStart=9*60;
-  const workEnd=18*60;
-  const currentMinutes=h*60+m;
-  const totalWork=workEnd-workStart;
-  const elapsed=currentMinutes-workStart;
-  const remaining=workEnd-currentMinutes;
-  
-  if(currentMinutes<workStart){
-    const diff=workStart-currentMinutes;
-    const dh=Math.floor(diff/60);
-    const dm=diff%60;
-    document.getElementById('countdown-time').textContent=`0${dh}:${String(dm).padStart(2,'0')}:00`;
-    document.getElementById('countdown-sub').textContent='距离上班还有';
-    document.getElementById('countdown-bar').style.width='0%';
-  }else if(currentMinutes>=workEnd){
-    document.getElementById('countdown-time').textContent='🎉 下班啦！';
-    document.getElementById('countdown-sub').textContent='辛苦了，好好休息~';
-    document.getElementById('countdown-bar').style.width='100%';
+  const cur=h*60+m,start=9*60,end=18*60;
+  if(cur<start){
+    const d=start-cur;document.getElementById('cd-time').textContent=`0${Math.floor(d/60)}:${String(d%60).padStart(2,'0')}:00`;
+    document.getElementById('cd-sub').textContent='距离上班还有';document.getElementById('cd-bar').style.width='0%';
+  }else if(cur>=end){
+    document.getElementById('cd-time').textContent='🎉 下班啦！';
+    document.getElementById('cd-sub').textContent='辛苦了，好好休息~';document.getElementById('cd-bar').style.width='100%';
   }else{
-    const rh=Math.floor(remaining/60);
-    const rm=remaining%60;
-    const rs=60-s;
-    document.getElementById('countdown-time').textContent=`${String(rh).padStart(2,'0')}:${String(rm).padStart(2,'0')}:${String(rs).padStart(2,'0')}`;
-    document.getElementById('countdown-sub').textContent=`今日已工作 ${Math.floor(elapsed/60)}小时${elapsed%60}分钟`;
-    const progress=Math.min(100,Math.max(0,(elapsed/totalWork)*100));
-    document.getElementById('countdown-bar').style.width=progress+'%';
+    const rem=end-cur,rh=Math.floor(rem/60),rm=rem%60,rs=60-s;
+    document.getElementById('cd-time').textContent=`${String(rh).padStart(2,'0')}:${String(rm).padStart(2,'0')}:${String(rs).padStart(2,'0')}`;
+    document.getElementById('cd-sub').textContent=`今日已工作 ${Math.floor((cur-start)/60)}小时${(cur-start)%60}分钟`;
+    document.getElementById('cd-bar').style.width=Math.min(100,Math.max(0,((cur-start)/(end-start))*100))+'%';
   }
 }
 
 // ===== Weather =====
-const weatherAlerts={
-  hot:['🥵 高温预警：注意防暑降温','🧊 建议：室内活动，避免外出'],
-  cold:['🥶 低温预警：注意保暖','☕ 建议：喝杯热饮暖暖身子'],
-  rain:['☂️ 雨天提醒：记得带伞','🚗 建议：注意路面湿滑'],
-  fog:['🌫️ 大雾提醒：注意安全','🚗 建议：开启雾灯，减速慢行'],
-  default:['🌤️ 今天天气不错','💧 提醒：记得多喝水']
-};
-
-function getAlerts(code,temp){
-  if(code>=200&&code<700)return[...weatherAlerts.rain];
-  if(code>=700&&code<800)return[...weatherAlerts.fog];
-  if(parseInt(temp)>=35)return[...weatherAlerts.hot];
-  if(parseInt(temp)<=0)return[...weatherAlerts.cold];
-  return[...weatherAlerts.default];
-}
-
-function getIcon(code){
-  if(code>=200&&code<300)return'⛈️';if(code>=300&&code<600)return'🌧️';
-  if(code>=600&&code<700)return'❄️';if(code>=700&&code<800)return'🌫️';
-  if(code===800)return'☀️';if(code===801)return'⛅';return'☁️';
-}
-
-function getCachedLocation(){
-  try{const c=localStorage.getItem('userLocation');if(c){const d=JSON.parse(c);if(Date.now()-d.timestamp<3600000)return d;}}catch(e){}
-  return null;
-}
-
-function cacheLocation(lat,lon){try{localStorage.setItem('userLocation',JSON.stringify({lat,lon,timestamp:Date.now()}));}catch(e){}}
-
 async function fetchWeather(){
-  const cached=getCachedLocation();
-  if(cached){try{await fetchWeatherByCoords(cached.lat,cached.lon);return;}catch(e){}}
-  
-  if('geolocation' in navigator){
-    try{
-      const perm=await navigator.permissions.query({name:'geolocation'});
-      if(perm.state==='granted'){
-        navigator.geolocation.getCurrentPosition(
-          async(p)=>{cacheLocation(p.coords.latitude,p.coords.longitude);await fetchWeatherByCoords(p.coords.latitude,p.coords.longitude);},
-          ()=>fetchWeatherByIP(),{timeout:5000,maximumAge:600000}
-        );return;
-      }
-    }catch(e){}
-  }
-  fetchWeatherByIP();
-}
-
-async function fetchWeatherByCoords(lat,lon){
-  const res=await fetch(`https://wttr.in/${lat},${lon}?format=j1`);
-  const data=await res.json();
-  const c=data.current_condition[0],code=parseInt(c.weatherCode);
-  document.getElementById('weather-icon').textContent=getIcon(code);
-  document.getElementById('weather-temp').innerHTML=`${c.temp_C}<span>°C</span>`;
-  document.getElementById('weather-desc').textContent=c.lang_zh?.[0]?.value||c.weatherDesc[0].value;
-  document.getElementById('weather-detail').innerHTML=`体感${c.FeelsLikeC}°C · 湿度${c.humidity}% · 风速${c.windspeedKmph}km/h`;
-  document.getElementById('weather-location').innerHTML=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${data.nearest_area[0].areaName[0].value}`;
-  document.getElementById('weather-alerts').innerHTML=getAlerts(code,c.temp_C).map(a=>`<div class="alert-item">${a}</div>`).join('');
-}
-
-async function fetchWeatherByIP(){
   try{
-    const res=await fetch('https://wttr.in/?format=j1');
-    const data=await res.json();
-    const c=data.current_condition[0],code=parseInt(c.weatherCode);
-    document.getElementById('weather-icon').textContent=getIcon(code);
-    document.getElementById('weather-temp').innerHTML=`${c.temp_C}<span>°C</span>`;
-    document.getElementById('weather-desc').textContent=c.lang_zh?.[0]?.value||c.weatherDesc[0].value;
-    document.getElementById('weather-detail').innerHTML=`体感${c.FeelsLikeC}°C · 湿度${c.humidity}%`;
-    document.getElementById('weather-location').innerHTML=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> ${data.nearest_area[0].areaName[0].value}`;
-    document.getElementById('weather-alerts').innerHTML=getAlerts(code,c.temp_C).map(a=>`<div class="alert-item">${a}</div>`).join('');
-  }catch(e){
-    document.getElementById('weather-desc').textContent='无法获取天气';
-    document.getElementById('weather-location').innerHTML='⚠️ 请检查网络';
-  }
+    const r=await fetch('https://wttr.in/?format=j1');
+    const d=await r.json(),c=d.current_condition[0],code=parseInt(c.weatherCode);
+    let icon='☁️';
+    if(code>=200&&code<300)icon='⛈️';else if(code>=300&&code<600)icon='🌧️';
+    else if(code>=600&&code<700)icon='❄️';else if(code>=700&&code<800)icon='🌫️';
+    else if(code===800)icon='☀️';else if(code===801)icon='⛅';
+    document.getElementById('w-icon').textContent=icon;
+    document.getElementById('w-temp').innerHTML=`${c.temp_C}<span>°C</span>`;
+    document.getElementById('w-desc').textContent=c.lang_zh?.[0]?.value||c.weatherDesc[0].value;
+    document.getElementById('w-detail').textContent=`体感${c.FeelsLikeC}°C · 湿度${c.humidity}%`;
+    document.getElementById('w-loc').textContent=`📍 ${d.nearest_area[0].areaName[0].value}`;
+  }catch(e){}
 }
 
-// ===== Esports =====
-const now=new Date();
-const today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+// ===== Matches =====
+const today=new Date().toISOString().split('T')[0];
 const matches=[
-  {league:'LPL',time:'16:00',t1:'TES',n1:'Top Esports',t2:'BLG',n2:'Bilibili Gaming',date:today},
-  {league:'LCK',time:'17:00',t1:'T1',n1:'T1',t2:'GEN',n2:'Gen.G',date:today},
-  {league:'LPL',time:'19:00',t1:'JDG',n1:'JD Gaming',t2:'WBG',n2:'Weibo Gaming',date:today},
-  {league:'LCK',time:'19:30',t1:'KT',n1:'KT Rolster',t2:'HLE',n2:'Hanwha Life',date:today},
+  {l:'LPL',t:'16:00',t1:'TES',n1:'Top Esports',t2:'BLG',n2:'Bilibili Gaming'},
+  {l:'LCK',t:'17:00',t1:'T1',n1:'T1',t2:'GEN',n2:'Gen.G'},
+  {l:'LPL',t:'19:00',t1:'JDG',n1:'JD Gaming',t2:'WBG',n2:'Weibo Gaming'},
+  {l:'LCK',t:'19:30',t1:'KT',n1:'KT Rolster',t2:'HLE',n2:'Hanwha Life'},
 ];
 
 function renderMatches(){
-  const h=new Date().getHours(),m=new Date().getMinutes();
-  document.getElementById('match-list').innerHTML=matches.slice(0,4).map(x=>{
-    const [mh]=x.time.split(':').map(Number);
-    const live=x.date===today&&h===mh;
-    const done=x.date===today&&(h>mh+1||(h===mh+1&&m>=30));
-    return`<div class="match-item"><div class="match-league">${x.league}</div><div class="match-teams"><div class="team"><div class="team-logo">${x.t1}</div><div class="team-name">${x.n1}</div></div><div class="match-vs">VS</div><div class="team right"><div class="team-logo">${x.t2}</div><div class="team-name">${x.n2}</div></div></div><div class="match-meta"><div class="match-time">${live?'LIVE':x.time}</div>${live?'<div class="match-status live">🔴 直播中</div>':''}${done?'<div class="match-status">✅ 已结束</div>':''}</div></div>`;
+  const h=new Date().getHours();
+  document.getElementById('match-list').innerHTML=matches.map(x=>{
+    const mh=parseInt(x.t.split(':')[0]);
+    const live=h===mh;
+    return`<div class="match"><div class="match-league">${x.l}</div><div class="match-teams"><div class="team"><div class="team-logo">${x.t1}</div><div class="team-name">${x.n1}</div></div><div class="match-vs">VS</div><div class="team r"><div class="team-logo">${x.t2}</div><div class="team-name">${x.n2}</div></div></div><div class="match-time"><span>${live?'LIVE':x.t}</span></div>${live?'<div class="match-status live">🔴 直播中</div>':''}</div>`;
   }).join('');
 }
 
-// ===== Storage (IndexedDB - more reliable) =====
-const DB_NAME='TodayAssistant';
-const DB_VERSION=1;
-let db=null;
-
-function openDB(){
-  return new Promise((resolve,reject)=>{
-    const req=indexedDB.open(DB_NAME,DB_VERSION);
-    req.onupgradeneeded=e=>{
-      const d=e.target.result;
-      if(!d.objectStoreNames.contains('data'))d.createObjectStore('data');
-    };
-    req.onsuccess=e=>{db=e.target.result;resolve(db)};
-    req.onerror=e=>reject(e);
-  });
-}
-
-async function dbSave(key,value){
-  if(!db)await openDB();
-  return new Promise((resolve,reject)=>{
-    const tx=db.transaction('data','readwrite');
-    tx.objectStore('data').put(value,key);
-    tx.oncomplete=()=>resolve();
-    tx.onerror=e=>reject(e);
-  });
-}
-
-async function dbLoad(key){
-  if(!db)await openDB();
-  return new Promise((resolve,reject)=>{
-    const tx=db.transaction('data','readonly');
-    const req=tx.objectStore('data').get(key);
-    req.onsuccess=()=>resolve(req.result);
-    req.onerror=e=>reject(e);
-  });
-}
-
-// Wrapper functions
-function saveTodosLocal(){try{dbSave('todos',todos).catch(()=>{})}catch(e){}}
-function saveWallLocal(){try{dbSave('wallPosts',wallPosts).catch(()=>{})}catch(e){}}
-async function loadTodosLocal(){try{return await dbLoad('todos')||[]}catch(e){return[]}}
-async function loadWallLocal(){try{return await dbLoad('wallPosts')||[]}catch(e){return[]}}
-
-async function saveTodos(){
-  try{localStorage.setItem('todos',JSON.stringify(todos))}catch(e){}
-  if(GITHUB_TOKEN){try{await cloudSave('todos',todos)}catch(e){console.log('Cloud save error:',e)}}
-}
-
-async function saveWall(){
-  try{localStorage.setItem('wallPosts',JSON.stringify(wallPosts))}catch(e){}
-  if(GITHUB_TOKEN){try{await cloudSave('wallPosts',wallPosts)}catch(e){console.log('Cloud save error:',e)}}
-}
-
-async function loadCloudData(){
-  if(!GITHUB_TOKEN){
-    const hasToken=await ensureToken();
-    if(!hasToken)return;
-  }
-  
-  try{
-    const cloudTodos=await cloudLoad('todos');
-    if(cloudTodos&&cloudTodos.length>0){
-      const localTodos=JSON.parse(localStorage.getItem('todos')||'[]');
-      const merged=mergeData(localTodos,cloudTodos);
-      todos=merged;
-      try{localStorage.setItem('todos',JSON.stringify(todos))}catch(e){}
-      renderTodo();
-    }
-    
-    const cloudPosts=await cloudLoad('wallPosts');
-    if(cloudPosts&&cloudPosts.length>0){
-      const localPosts=JSON.parse(localStorage.getItem('wallPosts')||'[]');
-      const merged=mergeData(localPosts,cloudPosts);
-      wallPosts=merged;
-      try{localStorage.setItem('wallPosts',JSON.stringify(wallPosts))}catch(e){}
-      renderWall();
-    }
-  }catch(e){console.error('Cloud load failed:',e)}
-}
-
-function mergeData(local,cloud){
-  const map=new Map();
-  local.forEach(item=>map.set(item.id,item));
-  cloud.forEach(item=>{if(!map.has(item.id))map.set(item.id,item)});
-  return Array.from(map.values()).sort((a,b)=>b.id-a.id);
-}
-
-function setPri(p){curPri=p;document.querySelectorAll('.pri-btn').forEach(b=>b.classList.toggle('active',b.dataset.p===p))}
+// ===== Todo =====
+function setPri(p){curPri=p;document.querySelectorAll('.pri').forEach(b=>b.classList.toggle('active',b.dataset.p===p))}
 
 function addTodo(){
-  const inp=document.getElementById('todo-input');
-  const text=inp.value.trim();
+  const inp=document.getElementById('todo-input'),text=inp.value.trim();
   if(!text)return;
   todos.unshift({id:Date.now(),text,pri:curPri,done:false,time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})});
-  saveTodosLocal();
-  renderTodo();
-  inp.value='';
+  saveTodos();renderTodos();inp.value='';
 }
 
-function toggleTodo(id){
-  const todo=todos.find(t=>t.id===id);
-  if(todo)todo.done=!todo.done;
-  saveTodosLocal();
-  renderTodo();
-}
+function toggleTodo(id){const t=todos.find(x=>x.id===id);if(t)t.done=!t.done;saveTodos();renderTodos()}
+function delTodo(id){todos=todos.filter(x=>x.id!==id);saveTodos();renderTodos()}
+function filterTodo(f,btn){curFilter=f;document.querySelectorAll('.filter').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTodos()}
 
-function delTodo(id){
-  todos=todos.filter(t=>t.id!==id);
-  saveTodosLocal();
-  renderTodo();
-}
-function filterTodo(f,btn){curFilter=f;document.querySelectorAll('.todo-filter').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTodo()}
-
-function renderTodo(){
+function renderTodos(){
   let list=todos;
   if(curFilter==='pending')list=todos.filter(t=>!t.done);
-  else if(curFilter==='completed')list=todos.filter(t=>t.done);
-  document.getElementById('todo-list').innerHTML=list.length?list.map(t=>`<div class="todo-item ${t.done?'completed':''}"><div class="todo-check ${t.done?'done':''}" onclick="toggleTodo(${t.id})"></div><div class="todo-dot ${t.pri}"></div><div class="todo-content"><div class="todo-text">${t.text}</div><div class="todo-time">${t.time}</div></div><button class="todo-del" onclick="delTodo(${t.id})">×</button></div>`).join(''):'<div class="todo-empty">暂无待办事项</div>';
-  document.getElementById('todo-total').textContent=todos.length;
-  document.getElementById('todo-done').textContent=todos.filter(t=>t.done).length;
+  else if(curFilter==='done')list=todos.filter(t=>t.done);
+  document.getElementById('todo-list').innerHTML=list.length?list.map(t=>`<div class="item ${t.done?'completed':''}"><div class="check ${t.done?'done':''}" onclick="toggleTodo(${t.id})"></div><div class="dot ${t.pri}"></div><div class="item-content"><div class="item-text">${t.text}</div><div class="item-time">${t.time}</div></div><button class="del" onclick="delTodo(${t.id})">×</button></div>`).join(''):'<div class="empty">暂无待办</div>';
+  document.getElementById('t-total').textContent=todos.length;
+  document.getElementById('t-done').textContent=todos.filter(t=>t.done).length;
+}
+
+async function saveTodos(){
+  await dbPut('todos',todos);
+  cloudSync('todos',todos);
 }
 
 // ===== Wall =====
-const wallEmojis=['😊','😎','🤔','😤','😴','🎉','💪','🔥','💯','⭐','💖','🚀','👻','🐱','☕','🎮'];
-const adjectives=['快乐的','忧伤的','暴躁的','佛系的','摸鱼的','加班的','熬夜的','干饭的','发呆的','社恐的','社牛的','内卷的','躺平的','摆烂的'];
+const emojis=['😊','😎','🤔','😤','😴','🎉','💪','🔥','💯','⭐','💖','🚀','👻','🐱','☕','🎮'];
+const adjs=['快乐的','忧伤的','暴躁的','佛系的','摸鱼的','加班的','熬夜的','干饭的','发呆的','社恐的','社牛的','内卷的','躺平的','摆烂的'];
 const nouns=['小猫','小狗','仓鼠','熊猫','柴犬','橘猫','程序员','学生','打工人','老师'];
-const colors=['#6366f1','#ec4899','#06b6d4','#10b981','#f59e0b','#ef4444','#8b5cf6'];
+const pcolors=['#6366f1','#ec4899','#06b6d4','#10b981','#f59e0b','#ef4444','#8b5cf6'];
 
-let wallPosts=JSON.parse(localStorage.getItem('wallPosts'))||[];
-let myId=localStorage.getItem('myWallId');
-
-function generateId(){return adjectives[Math.floor(Math.random()*adjectives.length)]+nouns[Math.floor(Math.random()*nouns.length)]+Math.floor(Math.random()*999+1)}
-function getMyId(){if(!myId){myId=generateId();localStorage.setItem('myWallId',myId)}return myId}
-function getColor(n){let h=0;for(let i=0;i<n.length;i++)h=n.charCodeAt(i)+((h<<5)-h);return colors[Math.abs(h)%colors.length]}
-function getEmoji(){return wallEmojis[Math.floor(Math.random()*wallEmojis.length)]}
+function getMyId(){if(!myId){myId=localStorage.getItem('myId');if(!myId){myId=adjs[Math.floor(Math.random()*adjs.length)]+nouns[Math.floor(Math.random()*nouns.length)]+Math.floor(Math.random()*999+1);localStorage.setItem('myId',myId)}}return myId}
+function getColor(n){let h=0;for(let i=0;i<n.length;i++)h=n.charCodeAt(i)+((h<<5)-h);return pcolors[Math.abs(h)%pcolors.length]}
+function getEmoji(){return emojis[Math.floor(Math.random()*emojis.length)]}
 function timeAgo(ts){const d=Date.now()-ts,m=Math.floor(d/60000);if(m<1)return'刚刚';if(m<60)return m+'分钟前';const h=Math.floor(m/60);if(h<24)return h+'小时前';return Math.floor(h/24)+'天前'}
 
-function renderEmojiBar(){document.getElementById('wall-emoji-bar').innerHTML=['😊','😎','😤','🔥','💯','❤️','🎉','💪'].map(e=>`<button class="emoji-btn" onclick="insertEmoji('${e}')">${e}</button>`).join('')}
-function insertEmoji(e){const inp=document.getElementById('wall-input');inp.value+=e;inp.focus()}
+function renderEmojiBar(){document.getElementById('emoji-bar').innerHTML=['😊','😎','😤','🔥','💯','❤️','🎉','💪'].map(e=>`<button class="emoji-btn" onclick="insertEmoji('${e}')">${e}</button>`).join('')}
+function insertEmoji(e){const i=document.getElementById('wall-input');i.value+=e;i.focus()}
 
 function postWall(){
-  const inp=document.getElementById('wall-input');
-  const text=inp.value.trim();
+  const inp=document.getElementById('wall-input'),text=inp.value.trim();
   if(!text)return;
   wallPosts.unshift({id:Date.now(),userId:getMyId(),text,emoji:getEmoji(),color:getColor(getMyId()),likes:0,likedBy:[],time:Date.now()});
-  saveWallLocal();
-  renderWall();
-  inp.value='';
+  saveWall();renderWall();inp.value='';
 }
 
 function likeWall(id){
-  const post=wallPosts.find(p=>p.id===id);
-  if(!post)return;
+  const p=wallPosts.find(x=>x.id===id);if(!p)return;
   const mid=getMyId();
-  if(post.likedBy.includes(mid)){post.likedBy=post.likedBy.filter(i=>i!==mid);post.likes--}
-  else{post.likedBy.push(mid);post.likes++}
-  saveWallLocal();
-  renderWall();
+  if(p.likedBy.includes(mid)){p.likedBy=p.likedBy.filter(i=>i!==mid);p.likes--}
+  else{p.likedBy.push(mid);p.likes++}
+  saveWall();renderWall();
 }
 
 function renderWall(){
-  const list=document.getElementById('wall-list');
-  const mid=getMyId();
-  if(!wallPosts.length){list.innerHTML='<div class="wall-empty">💬 还没有吐槽，来第一条吧！</div>'}
-  else{
-    list.innerHTML=wallPosts.slice(0,30).map(p=>{
-      const isMe=p.userId===mid;
-      const isLiked=p.likedBy.includes(mid);
-      return`<div class="wall-post"><div class="wall-header"><div class="wall-user"><div class="wall-avatar" style="background:${p.color}">${p.emoji}</div><span class="wall-name">${p.userId}${isMe?' (我)':''}</span></div><span class="wall-time">${timeAgo(p.time)}</span></div><div class="wall-content">${p.text}</div><div class="wall-actions"><button class="wall-action ${isLiked?'liked':''}" onclick="likeWall(${p.id})">${isLiked?'❤️':'🤍'} ${p.likes}</button></div></div>`;
-    }).join('');
-  }
-  document.getElementById('wall-total').textContent=wallPosts.length;
-  document.getElementById('wall-likes').textContent=wallPosts.reduce((s,p)=>s+p.likes,0);
+  const list=document.getElementById('wall-list'),mid=getMyId();
+  if(!wallPosts.length){list.innerHTML='<div class="empty">💬 还没有吐槽，来第一条吧！</div>';return}
+  list.innerHTML=wallPosts.slice(0,20).map(p=>{
+    const isMe=p.userId===mid,isLiked=p.likedBy.includes(mid);
+    return`<div class="wall-post" style="border-left-color:${p.color}"><div class="wall-header"><div class="wall-user"><div class="wall-avatar" style="background:${p.color}">${p.emoji}</div><span class="wall-name">${p.userId}${isMe?' (我)':''}</span></div><span class="wall-time">${timeAgo(p.time)}</span></div><div class="wall-content">${p.text}</div><button class="wall-action ${isLiked?'liked':''}" onclick="likeWall(${p.id})">${isLiked?'❤️':'🤍'} ${p.likes}</button></div>`;
+  }).join('');
+  document.getElementById('w-total').textContent=wallPosts.length;
+  document.getElementById('w-likes').textContent=wallPosts.reduce((s,p)=>s+p.likes,0);
 }
 
+async function saveWall(){
+  await dbPut('wallPosts',wallPosts);
+  cloudSync('wallPosts',wallPosts);
+}
+
+// ===== Event Listeners =====
+document.getElementById('todo-input').addEventListener('keypress',e=>{if(e.key==='Enter')addTodo()});
+document.getElementById('wall-input').addEventListener('keypress',e=>{if(e.key==='Enter')postWall()});
+
 // ===== Init =====
-async function initApp(){
-  // Open database first
+async function init(){
   await openDB();
   
-  // Load data from IndexedDB
-  const savedTodos=await loadTodosLocal();
-  if(savedTodos.length>0)todos=savedTodos;
+  // Load from IndexedDB
+  const savedTodos=await dbGet('todos');
+  if(savedTodos)todos=savedTodos;
+  const savedPosts=await dbGet('wallPosts');
+  if(savedPosts)wallPosts=savedPosts;
   
-  const savedPosts=await loadWallLocal();
-  if(savedPosts.length>0)wallPosts=savedPosts;
+  // Try cloud load
+  if(token&&gistId){
+    const ct=await cloudLoad('todos');if(ct)todos=ct;
+    const cp=await cloudLoad('wallPosts');if(cp)wallPosts=cp;
+  }
   
-  // Render UI
+  // Ensure token on first visit
+  await ensureToken();
+  
+  // Render
   updateClock();setInterval(updateClock,1000);
   updateCountdown();setInterval(updateCountdown,1000);
   fetchWeather();setInterval(fetchWeather,600000);
-  renderMatches();renderTodo();
+  renderMatches();renderTodos();
   getMyId();renderEmojiBar();renderWall();
   
-  if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').then(r=>r.update()).catch(()=>{})}
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
 }
 
-initApp();
+init();
 </script>
 </body>
 </html>
