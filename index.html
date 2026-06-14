@@ -530,13 +530,35 @@ let cloudGistId=localStorage.getItem('gistId')||'';
 
 async function ensureToken(){
   if(GITHUB_TOKEN)return true;
-  const token=prompt('请输入GitHub Token以启用云同步（可留空跳过）：');
-  if(token&&token.startsWith('ghp_')){
-    GITHUB_TOKEN=token;
-    localStorage.setItem('githubToken',token);
-    return true;
-  }
-  return false;
+  return new Promise(resolve=>{
+    const modal=document.createElement('div');
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.innerHTML=`
+      <div style="background:#1e293b;border-radius:16px;padding:24px;max-width:360px;width:100%;border:1px solid rgba(255,255,255,.1)">
+        <h3 style="color:#f8fafc;font-size:16px;margin-bottom:8px">🔐 启用云同步</h3>
+        <p style="color:#94a3b8;font-size:12px;margin-bottom:16px">输入GitHub Token以同步数据到云端<br><a href="https://github.com/settings/tokens" target="_blank" style="color:#818cf8">点此生成Token</a>（勾选gist权限）</p>
+        <input type="text" id="token-input" placeholder="ghp_xxxxxxxxxxxx" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:#f8fafc;font-size:14px;margin-bottom:12px">
+        <div style="display:flex;gap:8px">
+          <button id="token-ok" style="flex:1;padding:10px;background:#6366f1;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">确认</button>
+          <button id="token-skip" style="flex:1;padding:10px;background:rgba(255,255,255,.05);color:#94a3b8;border:1px solid rgba(255,255,255,.1);border-radius:8px;font-size:13px;cursor:pointer">跳过</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    
+    document.getElementById('token-ok').onclick=()=>{
+      const val=document.getElementById('token-input').value.trim();
+      if(val&&val.startsWith('ghp_')){
+        GITHUB_TOKEN=val;
+        localStorage.setItem('githubToken',val);
+        modal.remove();
+        resolve(true);
+      }else{
+        document.getElementById('token-input').style.borderColor='#ef4444';
+      }
+    };
+    document.getElementById('token-skip').onclick=()=>{modal.remove();resolve(false)};
+    document.getElementById('token-input').onkeypress=(e)=>{if(e.key==='Enter')document.getElementById('token-ok').click()};
+  });
 }
 
 async function cloudSave(key,data){
