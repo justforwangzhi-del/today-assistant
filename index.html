@@ -169,7 +169,7 @@ body{
 .wall-input{flex:1;padding:10px 12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-xs);font-size:13px;color:#f8fafc;outline:none}
 .wall-input:focus{border-color:var(--secondary);box-shadow:0 0 0 2px rgba(236,72,153,.2)}
 .wall-input::placeholder{color:var(--text-muted)}
-.wall-btn{padding:10px 14px;background:linear-gradient(135deg,var(--secondary),#db2777);color:#fff;border:none;border-radius:var(--radius-xs);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.wall-btn{padding:10px 14px;background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;border:none;border-radius:var(--radius-xs);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
 .wall-emoji-bar{display:flex;gap:4px;margin-bottom:10px}
 .emoji-btn{width:30px;height:30px;border:1px solid rgba(255,255,255,.08);border-radius:6px;background:rgba(255,255,255,.03);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
 .emoji-btn:hover{background:rgba(255,255,255,.1)}
@@ -324,7 +324,7 @@ body{
       <div class="section-title">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
         匿名吐槽墙
-        <span class="section-badge" style="background:linear-gradient(135deg,var(--secondary),#db2777)">ANON</span>
+        <span class="section-badge" style="background:linear-gradient(135deg,#8b5cf6,#6366f1)">👹</span>
       </div>
       <div class="todo-stats">
         <span>💬 <strong id="wall-total">0</strong></span>
@@ -524,9 +524,114 @@ function renderMatches(){
   }).join('');
 }
 
-// ===== Todo =====
-let todos=JSON.parse(localStorage.getItem('todos'))||[];
-let curFilter='all',curPri='medium';
+// ===== Cloud Sync =====
+let GITHUB_TOKEN=localStorage.getItem('githubToken')||'';
+let cloudGistId=localStorage.getItem('gistId')||'';
+
+async function ensureToken(){
+  if(GITHUB_TOKEN)return true;
+  const token=prompt('请输入GitHub Token以启用云同步（可留空跳过）：');
+  if(token&&token.startsWith('ghp_')){
+    GITHUB_TOKEN=token;
+    localStorage.setItem('githubToken',token);
+    return true;
+  }
+  return false;
+}
+
+async function cloudSave(key,data){
+  if(!GITHUB_TOKEN)return false;
+  try{
+    const payload={};
+    payload[key]=JSON.stringify(data);
+    
+    if(!cloudGistId){
+      const res=await fetch('https://api.github.com/gists',{
+        method:'POST',
+        headers:{'Authorization':`token ${GITHUB_TOKEN}`,'Content-Type':'application/json'},
+        body:JSON.stringify({description:'Today Assistant Data',files:{'data.json':{content:JSON.stringify(payload)}}})
+      });
+      const gist=await res.json();
+      cloudGistId=gist.id;
+      localStorage.setItem('gistId',cloudGistId);
+    }else{
+      const res=await fetch(`https://api.github.com/gists/${cloudGistId}`,{
+        headers:{'Authorization':`token ${GITHUB_TOKEN}`}
+      });
+      const gist=await res.json();
+      let existing={};
+      if(gist.files&&gist.files['data.json'])existing=JSON.parse(gist.files['data.json'].content);
+      Object.assign(existing,payload);
+      
+      await fetch(`https://api.github.com/gists/${cloudGistId}`,{
+        method:'PATCH',
+        headers:{'Authorization':`token ${GITHUB_TOKEN}`,'Content-Type':'application/json'},
+        body:JSON.stringify({files:{'data.json':{content:JSON.stringify(existing)}}})
+      });
+    }
+    return true;
+  }catch(e){console.error('Cloud save failed:',e);return false}
+}
+
+async function cloudLoad(key){
+  if(!GITHUB_TOKEN||!cloudGistId)return null;
+  try{
+    const res=await fetch(`https://api.github.com/gists/${cloudGistId}`,{
+      headers:{'Authorization':`token ${GITHUB_TOKEN}`}
+    });
+    const gist=await res.json();
+    if(gist.files&&gist.files['data.json']){
+      const data=JSON.parse(gist.files['data.json'].content);
+      return data[key]?JSON.parse(data[key]):null;
+    }
+    return null;
+  }catch(e){console.error('Cloud load failed:',e);return null}
+}
+
+async function saveTodos(){
+  localStorage.setItem('todos',JSON.stringify(todos));
+  if(GITHUB_TOKEN)await cloudSave('todos',todos);
+}
+
+async function saveWall(){
+  localStorage.setItem('wallPosts',JSON.stringify(wallPosts));
+  if(GITHUB_TOKEN)await cloudSave('wallPosts',wallPosts);
+}
+
+async function loadCloudData(){
+  if(!GITHUB_TOKEN){
+    // First time: ask for token
+    const hasToken=await ensureToken();
+    if(!hasToken)return;
+  }
+  
+  try{
+    const cloudTodos=await cloudLoad('todos');
+    if(cloudTodos&&cloudTodos.length>0){
+      const localTodos=JSON.parse(localStorage.getItem('todos'))||[];
+      const merged=mergeData(localTodos,cloudTodos);
+      todos=merged;
+      localStorage.setItem('todos',JSON.stringify(todos));
+      renderTodo();
+    }
+    
+    const cloudPosts=await cloudLoad('wallPosts');
+    if(cloudPosts&&cloudPosts.length>0){
+      const localPosts=JSON.parse(localStorage.getItem('wallPosts'))||[];
+      const merged=mergeData(localPosts,cloudPosts);
+      wallPosts=merged;
+      localStorage.setItem('wallPosts',JSON.stringify(wallPosts));
+      renderWall();
+    }
+  }catch(e){console.error('Cloud load failed:',e)}
+}
+
+function mergeData(local,cloud){
+  const map=new Map();
+  local.forEach(item=>map.set(item.id,item));
+  cloud.forEach(item=>{if(!map.has(item.id))map.set(item.id,item)});
+  return Array.from(map.values()).sort((a,b)=>b.id-a.id);
+}
 
 function setPri(p){curPri=p;document.querySelectorAll('.pri-btn').forEach(b=>b.classList.toggle('active',b.dataset.p===p))}
 
@@ -535,11 +640,11 @@ function addTodo(){
   const text=inp.value.trim();
   if(!text)return;
   todos.unshift({id:Date.now(),text,pri:curPri,done:false,time:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})});
-  save();renderTodo();inp.value='';
+  saveTodos();renderTodo();inp.value='';
 }
 
-function toggleTodo(id){todos.find(t=>t.id===id).done=!todos.find(t=>t.id===id).done;save();renderTodo()}
-function delTodo(id){todos=todos.filter(t=>t.id!==id);save();renderTodo()}
+function toggleTodo(id){todos.find(t=>t.id===id).done=!todos.find(t=>t.id===id).done;saveTodos();renderTodo()}
+function delTodo(id){todos=todos.filter(t=>t.id!==id);saveTodos();renderTodo()}
 function filterTodo(f,btn){curFilter=f;document.querySelectorAll('.todo-filter').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTodo()}
 
 function renderTodo(){
@@ -550,8 +655,6 @@ function renderTodo(){
   document.getElementById('todo-total').textContent=todos.length;
   document.getElementById('todo-done').textContent=todos.filter(t=>t.done).length;
 }
-
-function save(){localStorage.setItem('todos',JSON.stringify(todos))}
 
 // ===== Wall =====
 const wallEmojis=['😊','😎','🤔','😤','😴','🎉','💪','🔥','💯','⭐','💖','🚀','👻','🐱','☕','🎮'];
@@ -603,14 +706,15 @@ function renderWall(){
   document.getElementById('wall-likes').textContent=wallPosts.reduce((s,p)=>s+p.likes,0);
 }
 
-function saveWall(){localStorage.setItem('wallPosts',JSON.stringify(wallPosts))}
-
 // ===== Init =====
 updateClock();setInterval(updateClock,1000);
 updateCountdown();setInterval(updateCountdown,1000);
 fetchWeather();setInterval(fetchWeather,600000);
 renderMatches();renderTodo();
 getMyId();renderEmojiBar();renderWall();
+
+// Load cloud data
+setTimeout(()=>loadCloudData(),1500);
 
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').then(r=>r.update()).catch(()=>{})}
 </script>
