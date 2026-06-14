@@ -257,7 +257,21 @@ async function ensureToken(){
       </div>
     </div>`;
     document.body.appendChild(m);
-    document.getElementById('tk-ok').onclick=()=>{const v=document.getElementById('tk-input').value.trim();if(v&&v.startsWith('ghp_')){token=v;localStorage.setItem(GITHUB_TOKEN_KEY,v);m.remove();resolve(true)}else{document.getElementById('tk-input').style.borderColor='#ef4444'}};
+    document.getElementById('tk-ok').onclick=async()=>{
+      const v=document.getElementById('tk-input').value.trim();
+      const btn=document.getElementById('tk-ok');
+      if(!v||!v.startsWith('ghp_')){document.getElementById('tk-input').style.borderColor='#ef4444';return}
+      btn.textContent='验证中...';btn.disabled=true;
+      try{
+        const r=await fetch('https://api.github.com/user',{headers:{'Authorization':`token ${v}`}});
+        if(!r.ok)throw new Error('验证失败');
+        token=v;localStorage.setItem(GITHUB_TOKEN_KEY,v);m.remove();resolve(true);
+      }catch(e){
+        document.getElementById('tk-input').style.borderColor='#ef4444';
+        document.getElementById('tk-input').placeholder='Token无效，请重新输入';
+        btn.textContent='确认';btn.disabled=false;
+      }
+    };
     document.getElementById('tk-skip').onclick=()=>{localStorage.setItem(SKIP_TOKEN_KEY,'1');m.remove();resolve(false)};
     document.getElementById('tk-input').onkeypress=e=>{if(e.key==='Enter')document.getElementById('tk-ok').click()};
   });
@@ -266,17 +280,30 @@ async function ensureToken(){
 async function cloudSync(key,data){
   if(!token)return;
   try{
+    const allData={todos:JSON.stringify(todos),wallPosts:JSON.stringify(wallPosts)};
     if(!gistId){
-      const r=await fetch('https://api.github.com/gists',{method:'POST',headers:{'Authorization':`token ${token}`,'Content-Type':'application/json'},body:JSON.stringify({description:'TodayAssistant',files:{'data.json':{content:JSON.stringify({[key]:JSON.stringify(data)})}}})});
-      const g=await r.json();gistId=g.id;localStorage.setItem(GIST_ID_KEY,gistId);
+      const r=await fetch('https://api.github.com/gists',{method:'POST',headers:{'Authorization':`token ${token}`,'Content-Type':'application/json'},body:JSON.stringify({description:'TodayAssistant',files:{'data.json':{content:JSON.stringify(allData)}}})});
+      if(!r.ok)throw new Error('创建Gist失败: '+r.status);
+      const g=await r.json();
+      if(!g.id)throw new Error('无效的Gist响应');
+      gistId=g.id;localStorage.setItem(GIST_ID_KEY,gistId);
     }else{
       const r1=await fetch(`https://api.github.com/gists/${gistId}`,{headers:{'Authorization':`token ${token}`}});
-      const g1=await r1.json();let ex={};if(g1.files&&g1.files['data.json'])ex=JSON.parse(g1.files['data.json'].content);
+      if(!r1.ok)throw new Error('读取Gist失败: '+r1.status);
+      const g1=await r1.json();
+      let ex={};
+      if(g1.files&&g1.files['data.json']){
+        try{ex=JSON.parse(g1.files['data.json'].content)}catch(e){}
+      }
       ex[key]=JSON.stringify(data);
-      await fetch(`https://api.github.com/gists/${gistId}`,{method:'PATCH',headers:{'Authorization':`token ${token}`,'Content-Type':'application/json'},body:JSON.stringify({files:{'data.json':{content:JSON.stringify(ex)}}})});
+      const r2=await fetch(`https://api.github.com/gists/${gistId}`,{method:'PATCH',headers:{'Authorization':`token ${token}`,'Content-Type':'application/json'},body:JSON.stringify({files:{'data.json':{content:JSON.stringify(ex)}}})});
+      if(!r2.ok)throw new Error('更新Gist失败: '+r2.status);
     }
     showSync('✓ 已同步到云端');
-  }catch(e){console.error('Sync error:',e)}
+  }catch(e){
+    console.error('Sync error:',e);
+    showSync('⚠️ 云同步失败，数据已本地保存');
+  }
 }
 
 async function cloudLoad(key){
@@ -304,9 +331,10 @@ async function resetToken(){
     localStorage.removeItem(SKIP_TOKEN_KEY);
     await ensureToken();
     if(token){
-      // Sync current data to cloud
-      cloudSync('todos',todos);
-      cloudSync('wallPosts',wallPosts);
+      try{
+        await cloudSync('todos',todos);
+        await cloudSync('wallPosts',wallPosts);
+      }catch(e){console.error('Initial sync failed:',e)}
       showSync('✓ 云同步已启用');
     }
   }
@@ -436,9 +464,9 @@ function renderTodos(){
 }
 
 async function saveTodos(){
-  try{await dbPut('todos',todos)}catch(e){console.error('IndexedDB save failed:',e)}
   lsSave(LS_TODOS_KEY,todos);
-  cloudSync('todos',todos);
+  try{await dbPut('todos',todos)}catch(e){console.error('IndexedDB save failed:',e)}
+  try{await cloudSync('todos',todos)}catch(e){console.error('Cloud sync failed:',e)}
 }
 
 // ===== Wall =====
@@ -482,9 +510,9 @@ function renderWall(){
 }
 
 async function saveWall(){
-  try{await dbPut('wallPosts',wallPosts)}catch(e){console.error('IndexedDB save failed:',e)}
   lsSave(LS_WALL_KEY,wallPosts);
-  cloudSync('wallPosts',wallPosts);
+  try{await dbPut('wallPosts',wallPosts)}catch(e){console.error('IndexedDB save failed:',e)}
+  try{await cloudSync('wallPosts',wallPosts)}catch(e){console.error('Cloud sync failed:',e)}
 }
 
 // ===== Event Listeners =====
@@ -507,14 +535,16 @@ async function init(){
   if(!todos.length){const ls=lsLoad(LS_TODOS_KEY);if(ls)todos=ls}
   if(!wallPosts.length){const ls=lsLoad(LS_WALL_KEY);if(ls)wallPosts=ls}
   
-  // Try cloud load
-  if(token&&gistId){
-    const ct=await cloudLoad('todos');if(ct&&ct.length)todos=ct;
-    const cp=await cloudLoad('wallPosts');if(cp&&cp.length)wallPosts=cp;
-  }
-  
   // Ensure token on first visit
   await ensureToken();
+  
+  // Try cloud load after token is set
+  if(token&&gistId){
+    try{
+      const ct=await cloudLoad('todos');if(ct&&ct.length)todos=ct;
+      const cp=await cloudLoad('wallPosts');if(cp&&cp.length)wallPosts=cp;
+    }catch(e){console.error('Cloud load failed:',e)}
+  }
   
   // Render
   updateClock();setInterval(updateClock,1000);
