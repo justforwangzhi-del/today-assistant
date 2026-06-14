@@ -215,6 +215,7 @@ body{font-family:-apple-system,sans-serif;min-height:100vh;min-height:100dvh;pad
   <div class="footer" style="display:flex;justify-content:center;align-items:center;gap:12px">
     <span>Today Assistant · Made with ❤️</span>
     <button onclick="resetToken()" style="background:none;border:none;color:var(--text-muted);font-size:9px;cursor:pointer;text-decoration:underline">云同步设置</button>
+    <button onclick="copyLink()" id="copy-link-btn" style="background:none;border:none;color:var(--text-muted);font-size:9px;cursor:pointer;text-decoration:underline;display:none">复制带Token链接</button>
   </div>
 </div>
 
@@ -241,6 +242,13 @@ async function dbGet(k){if(!db)await openDB();return new Promise((res,rej)=>{con
 let token=localStorage.getItem(GITHUB_TOKEN_KEY)||'';
 let gistId=localStorage.getItem(GIST_ID_KEY)||'';
 
+// Check URL hash for token: #ghp_xxxx
+(function(){
+  const h=location.hash.slice(1);
+  if(h&&h.startsWith('ghp_')){token=h;localStorage.setItem(GITHUB_TOKEN_KEY,h)}
+})();
+function setHashToken(t){if(t){history.replaceState(null,'','#'+t)}else{history.replaceState(null,'',location.pathname+location.search)}}
+
 async function ensureToken(){
   if(token)return true;
   if(localStorage.getItem(SKIP_TOKEN_KEY))return false;
@@ -265,7 +273,7 @@ async function ensureToken(){
       try{
         const r=await fetch('https://api.github.com/user',{headers:{'Authorization':`token ${v}`}});
         if(!r.ok)throw new Error('验证失败');
-        token=v;localStorage.setItem(GITHUB_TOKEN_KEY,v);m.remove();resolve(true);
+        token=v;localStorage.setItem(GITHUB_TOKEN_KEY,v);setHashToken(v);m.remove();resolve(true);
       }catch(e){
         document.getElementById('tk-input').style.borderColor='#ef4444';
         document.getElementById('tk-input').placeholder='Token无效，请重新输入';
@@ -346,13 +354,14 @@ function showSync(msg){
 async function resetToken(){
   if(token){
     if(confirm('当前已启用云同步，是否要重新设置Token？')){
-      token='';gistId='';localStorage.removeItem(GITHUB_TOKEN_KEY);localStorage.removeItem(GIST_ID_KEY);localStorage.removeItem(SKIP_TOKEN_KEY);
-      showSync('已清除Token设置');
+      token='';gistId='';localStorage.removeItem(GITHUB_TOKEN_KEY);localStorage.removeItem(GIST_ID_KEY);localStorage.removeItem(SKIP_TOKEN_KEY);setHashToken('');
+      showSync('已清除Token设置');updateCopyBtn();
     }
   }else{
     localStorage.removeItem(SKIP_TOKEN_KEY);
     await ensureToken();
     if(token){
+      setHashToken(token);
       // Try to find and load existing cloud data
       try{
         const ct=await cloudLoad('todos');if(ct&&ct.length)todos=ct;
@@ -364,9 +373,18 @@ async function resetToken(){
         await cloudSync('todos',todos);
         await cloudSync('wallPosts',wallPosts);
       }catch(e){console.error('Initial sync failed:',e)}
-      showSync('✓ 云同步已启用');
+      showSync('✓ 云同步已启用');updateCopyBtn();
     }
   }
+}
+
+function copyLink(){
+  navigator.clipboard.writeText(location.href).then(()=>showSync('✓ 链接已复制，收藏此链接即可保存Token'));
+}
+
+function updateCopyBtn(){
+  const btn=document.getElementById('copy-link-btn');
+  if(btn)btn.style.display=token?'inline':'none';
 }
 
 // ===== State =====
@@ -583,6 +601,7 @@ async function init(){
   getMyId();renderEmojiBar();renderWall();
   
   if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  updateCopyBtn();
 }
 
 init();
