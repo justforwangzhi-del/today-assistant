@@ -216,6 +216,46 @@ body{
 /* Footer */
 .footer{text-align:center;padding:40px 0 20px;font-size:12px;color:var(--text-muted)}
 
+/* Anonymous Wall */
+.wall-section{grid-column:1/-1}
+.wall-input-wrap{display:flex;gap:8px;margin-bottom:16px}
+.wall-input{flex:1;padding:12px 16px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--radius-sm);font-size:14px;color:#f8fafc;outline:none;transition:all .2s}
+.wall-input:focus{border-color:var(--secondary);background:rgba(255,255,255,.08);box-shadow:0 0 0 3px rgba(236,72,153,.2)}
+.wall-input::placeholder{color:var(--text-muted)}
+.wall-btn{padding:12px 20px;background:linear-gradient(135deg,var(--secondary),#db2777);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.wall-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(236,72,153,.4)}
+.wall-emoji-bar{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.emoji-btn{width:36px;height:36px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:rgba(255,255,255,.03);cursor:pointer;font-size:18px;transition:all .2s;display:flex;align-items:center;justify-content:center}
+.emoji-btn:hover{background:rgba(255,255,255,.1);transform:scale(1.1)}
+.wall-list{display:flex;flex-direction:column;gap:10px;max-height:400px;overflow-y:auto;padding-right:4px}
+.wall-list::-webkit-scrollbar{width:4px}
+.wall-list::-webkit-scrollbar-track{background:transparent}
+.wall-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+.wall-post{
+  padding:14px 16px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);
+  border-radius:var(--radius-sm);transition:all .25s;
+  animation:fadeIn .3s ease;position:relative;overflow:hidden;
+}
+.wall-post::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:2px}
+.wall-post:nth-child(4n+1)::before{background:linear-gradient(180deg,#6366f1,#8b5cf6)}
+.wall-post:nth-child(4n+2)::before{background:linear-gradient(180deg,#ec4899,#f472b6)}
+.wall-post:nth-child(4n+3)::before{background:linear-gradient(180deg,#06b6d4,#22d3ee)}
+.wall-post:nth-child(4n)::before{background:linear-gradient(180deg,#10b981,#34d399)}
+.wall-post:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.1)}
+.wall-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.wall-user{display:flex;align-items:center;gap:8px}
+.wall-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px}
+.wall-name{font-size:12px;font-weight:600;color:var(--text-muted)}
+.wall-time{font-size:10px;color:var(--text-muted)}
+.wall-content{font-size:14px;color:#e2e8f0;line-height:1.6;word-break:break-word}
+.wall-actions{display:flex;gap:12px;margin-top:10px}
+.wall-action{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-muted);cursor:pointer;transition:color .2s;background:none;border:none;padding:0}
+.wall-action:hover{color:var(--secondary)}
+.wall-action.liked{color:var(--danger)}
+.wall-empty{text-align:center;padding:40px 20px;color:var(--text-muted)}
+.wall-empty-icon{font-size:40px;margin-bottom:12px;opacity:.5}
+
 /* Animations */
 .fade-up{opacity:0;transform:translateY(20px);animation:fadeUp .6s ease forwards}
 @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
@@ -392,6 +432,30 @@ body{
       </div>
       <div class="todo-list" id="todo-list"></div>
     </div>
+  </div>
+
+  <!-- Anonymous Wall -->
+  <div class="glass-card wall-section fade-up" style="animation-delay:.4s">
+    <div class="section-header">
+      <div class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        匿名吐槽墙
+        <span class="section-badge" style="background:linear-gradient(135deg,var(--secondary),#db2777)">ANON</span>
+      </div>
+      <div class="todo-stats">
+        <span>💬 <strong id="wall-total">0</strong></span>
+        <span>❤️ <strong id="wall-likes">0</strong></span>
+      </div>
+    </div>
+    <div class="wall-input-wrap">
+      <input type="text" class="wall-input" id="wall-input" placeholder="想说点什么？匿名吐槽一下..." maxlength="200" onkeypress="if(event.key==='Enter')postWall()">
+      <button class="wall-btn" onclick="postWall()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        发送
+      </button>
+    </div>
+    <div class="wall-emoji-bar" id="wall-emoji-bar"></div>
+    <div class="wall-list" id="wall-list"></div>
   </div>
 
   <div class="footer">Today Assistant · Made with ❤️</div>
@@ -618,10 +682,146 @@ function render(){
 
 function save(){localStorage.setItem('todos',JSON.stringify(todos))}
 
+// ===== Anonymous Wall =====
+const wallEmojis=['😊','😎','🤔','😤','😴','🎉','💪','🔥','💯','⭐','🌟','✨','💖','🎯','🚀','👻','🤡','💀','🐸','🍕','☕','🌈','🦄','🐱','🐶','🎮','🎵','📱','💻','🎁'];
+const adjectives=['快乐的','忧伤的','暴躁的','佛系的','摸鱼的','加班的','熬夜的','干饭的','发呆的','社恐的','社牛的','恋爱的','单身的','有钱的','缺钱的','摸鱼的','划水的','内卷的','躺平的','摆烂的'];
+const nouns=['小猫','小狗','仓鼠','熊猫','考拉','柴犬','哈士奇','橘猫','布偶','金毛','程序员','设计师','学生','打工人','老板','老师','医生','厨师','司机','保安'];
+const colors=['#6366f1','#ec4899','#06b6d4','#10b981','#f59e0b','#ef4444','#8b5cf6','#14b8a6','#f97316','#64748b'];
+
+let wallPosts=JSON.parse(localStorage.getItem('wallPosts'))||[];
+let myId=localStorage.getItem('myWallId');
+
+function generateId(){
+  const adj=adjectives[Math.floor(Math.random()*adjectives.length)];
+  const noun=nouns[Math.floor(Math.random()*nouns.length)];
+  const num=Math.floor(Math.random()*999)+1;
+  return`${adj}${noun}${num}`;
+}
+
+function getMyId(){
+  if(!myId){
+    myId=generateId();
+    localStorage.setItem('myWallId',myId);
+  }
+  return myId;
+}
+
+function getColor(name){
+  let hash=0;
+  for(let i=0;i<name.length;i++)hash=name.charCodeAt(i)+((hash<<5)-hash);
+  return colors[Math.abs(hash)%colors.length];
+}
+
+function getEmoji(){
+  return wallEmojis[Math.floor(Math.random()*wallEmojis.length)];
+}
+
+function timeAgo(ts){
+  const diff=Date.now()-ts;
+  const mins=Math.floor(diff/60000);
+  if(mins<1)return'刚刚';
+  if(mins<60)return`${mins}分钟前`;
+  const hours=Math.floor(mins/60);
+  if(hours<24)return`${hours}小时前`;
+  const days=Math.floor(hours/24);
+  return`${days}天前`;
+}
+
+function renderEmojiBar(){
+  const bar=document.getElementById('wall-emoji-bar');
+  const quick=['😊','😎','😤','🔥','💯','❤️','🎉','💪'];
+  bar.innerHTML=quick.map(e=>`<button class="emoji-btn" onclick="insertEmoji('${e}')">${e}</button>`).join('');
+}
+
+function insertEmoji(e){
+  const inp=document.getElementById('wall-input');
+  inp.value+=e;
+  inp.focus();
+}
+
+function postWall(){
+  const inp=document.getElementById('wall-input');
+  const text=inp.value.trim();
+  if(!text)return;
+  
+  const post={
+    id:Date.now(),
+    userId:getMyId(),
+    text,
+    emoji:getEmoji(),
+    color:getColor(getMyId()),
+    likes:0,
+    likedBy:[],
+    time:Date.now()
+  };
+  
+  wallPosts.unshift(post);
+  saveWall();
+  renderWall();
+  inp.value='';
+}
+
+function likeWall(id){
+  const post=wallPosts.find(p=>p.id===id);
+  if(!post)return;
+  
+  const myId=getMyId();
+  if(post.likedBy.includes(myId)){
+    post.likedBy=post.likedBy.filter(id=>id!==myId);
+    post.likes--;
+  }else{
+    post.likedBy.push(myId);
+    post.likes++;
+  }
+  saveWall();
+  renderWall();
+}
+
+function renderWall(){
+  const list=document.getElementById('wall-list');
+  const myId=getMyId();
+  
+  if(wallPosts.length===0){
+    list.innerHTML=`<div class="wall-empty"><div class="wall-empty-icon">💬</div><div>还没有吐槽，来第一条吧！</div></div>`;
+  }else{
+    list.innerHTML=wallPosts.slice(0,50).map(p=>{
+      const isMe=p.userId===myId;
+      const isLiked=p.likedBy.includes(myId);
+      return`
+        <div class="wall-post">
+          <div class="wall-header">
+            <div class="wall-user">
+              <div class="wall-avatar" style="background:${p.color}">${p.emoji}</div>
+              <span class="wall-name">${p.userId}${isMe?' (我)':''}</span>
+            </div>
+            <span class="wall-time">${timeAgo(p.time)}</span>
+          </div>
+          <div class="wall-content">${p.text}</div>
+          <div class="wall-actions">
+            <button class="wall-action ${isLiked?'liked':''}" onclick="likeWall(${p.id})">
+              ${isLiked?'❤️':'🤍'} ${p.likes}
+            </button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+  
+  document.getElementById('wall-total').textContent=wallPosts.length;
+  document.getElementById('wall-likes').textContent=wallPosts.reduce((sum,p)=>sum+p.likes,0);
+}
+
+function saveWall(){localStorage.setItem('wallPosts',JSON.stringify(wallPosts))}
+
+// Initialize wall
+getMyId();
+renderEmojiBar();
+renderWall();
+
 // ===== Init =====
 updateClock();setInterval(updateClock,1000);
 fetchWeather();setInterval(fetchWeather,600000);
 renderMatches();render();
+renderWall();
 
 // Register Service Worker
 if('serviceWorker' in navigator){
