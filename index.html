@@ -212,13 +212,17 @@ body{font-family:-apple-system,sans-serif;min-height:100vh;min-height:100dvh;pad
     <div class="list" id="wall-list"></div>
   </div>
 
-  <div class="footer">Today Assistant · Made with ❤️</div>
+  <div class="footer" style="display:flex;justify-content:center;align-items:center;gap:12px">
+    <span>Today Assistant · Made with ❤️</span>
+    <button onclick="resetToken()" style="background:none;border:none;color:var(--text-muted);font-size:9px;cursor:pointer;text-decoration:underline">云同步设置</button>
+  </div>
 </div>
 
 <script>
 // ===== Config =====
 const GITHUB_TOKEN_KEY='gh_token';
 const GIST_ID_KEY='gh_gist_id';
+const SKIP_TOKEN_KEY='gh_token_skipped';
 
 // ===== IndexedDB =====
 let db=null;
@@ -239,6 +243,7 @@ let gistId=localStorage.getItem(GIST_ID_KEY)||'';
 
 async function ensureToken(){
   if(token)return true;
+  if(localStorage.getItem(SKIP_TOKEN_KEY))return false;
   return new Promise(resolve=>{
     const m=document.createElement('div');
     m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
@@ -253,7 +258,7 @@ async function ensureToken(){
     </div>`;
     document.body.appendChild(m);
     document.getElementById('tk-ok').onclick=()=>{const v=document.getElementById('tk-input').value.trim();if(v&&v.startsWith('ghp_')){token=v;localStorage.setItem(GITHUB_TOKEN_KEY,v);m.remove();resolve(true)}else{document.getElementById('tk-input').style.borderColor='#ef4444'}};
-    document.getElementById('tk-skip').onclick=()=>{m.remove();resolve(false)};
+    document.getElementById('tk-skip').onclick=()=>{localStorage.setItem(SKIP_TOKEN_KEY,'1');m.remove();resolve(false)};
     document.getElementById('tk-input').onkeypress=e=>{if(e.key==='Enter')document.getElementById('tk-ok').click()};
   });
 }
@@ -289,11 +294,35 @@ function showSync(msg){
   setTimeout(()=>s.classList.remove('show'),2000);
 }
 
+async function resetToken(){
+  if(token){
+    if(confirm('当前已启用云同步，是否要重新设置Token？')){
+      token='';gistId='';localStorage.removeItem(GITHUB_TOKEN_KEY);localStorage.removeItem(GIST_ID_KEY);localStorage.removeItem(SKIP_TOKEN_KEY);
+      showSync('已清除Token设置');
+    }
+  }else{
+    localStorage.removeItem(SKIP_TOKEN_KEY);
+    await ensureToken();
+    if(token){
+      // Sync current data to cloud
+      cloudSync('todos',todos);
+      cloudSync('wallPosts',wallPosts);
+      showSync('✓ 云同步已启用');
+    }
+  }
+}
+
 // ===== State =====
 let todos=[];
 let wallPosts=[];
 let myId='';
 let curFilter='all',curPri='medium';
+
+// ===== LocalStorage Fallback =====
+const LS_TODOS_KEY='today_todos';
+const LS_WALL_KEY='today_wall';
+function lsSave(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function lsLoad(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
 
 // ===== Clock =====
 function updateClock(){
@@ -407,7 +436,8 @@ function renderTodos(){
 }
 
 async function saveTodos(){
-  await dbPut('todos',todos);
+  try{await dbPut('todos',todos)}catch(e){console.error('IndexedDB save failed:',e)}
+  lsSave(LS_TODOS_KEY,todos);
   cloudSync('todos',todos);
 }
 
@@ -452,7 +482,8 @@ function renderWall(){
 }
 
 async function saveWall(){
-  await dbPut('wallPosts',wallPosts);
+  try{await dbPut('wallPosts',wallPosts)}catch(e){console.error('IndexedDB save failed:',e)}
+  lsSave(LS_WALL_KEY,wallPosts);
   cloudSync('wallPosts',wallPosts);
 }
 
@@ -462,18 +493,24 @@ document.getElementById('wall-input').addEventListener('keypress',e=>{if(e.key==
 
 // ===== Init =====
 async function init(){
-  await openDB();
+  try{await openDB()}catch(e){console.error('IndexedDB open failed:',e)}
   
   // Load from IndexedDB
-  const savedTodos=await dbGet('todos');
+  let savedTodos=null,savedPosts=null;
+  try{savedTodos=await dbGet('todos')}catch(e){}
+  try{savedPosts=await dbGet('wallPosts')}catch(e){}
+  
   if(savedTodos)todos=savedTodos;
-  const savedPosts=await dbGet('wallPosts');
   if(savedPosts)wallPosts=savedPosts;
+  
+  // Fallback to localStorage if IndexedDB empty
+  if(!todos.length){const ls=lsLoad(LS_TODOS_KEY);if(ls)todos=ls}
+  if(!wallPosts.length){const ls=lsLoad(LS_WALL_KEY);if(ls)wallPosts=ls}
   
   // Try cloud load
   if(token&&gistId){
-    const ct=await cloudLoad('todos');if(ct)todos=ct;
-    const cp=await cloudLoad('wallPosts');if(cp)wallPosts=cp;
+    const ct=await cloudLoad('todos');if(ct&&ct.length)todos=ct;
+    const cp=await cloudLoad('wallPosts');if(cp&&cp.length)wallPosts=cp;
   }
   
   // Ensure token on first visit
