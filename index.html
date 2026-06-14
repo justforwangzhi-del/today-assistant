@@ -352,11 +352,52 @@ function updateClock(){
 }
 
 // ===== Countdown =====
+const weekendMsgs=[
+  {text:'恢复元气中',sub:'今天好好休息吧~',icon:'🔋'},
+  {text:'今日宜睡觉',sub:'赖床是对周末最大的尊重',icon:'😴'},
+  {text:'摸鱼时间到',sub:'放下工作，享受生活',icon:'🐟'},
+  {text:'快乐星球',sub:'今天只做让自己开心的事',icon:'🌟'},
+  {text:'充电模式',sub:'为下周储备能量',icon:'⚡'},
+  {text:'躺平中...',sub:'人生苦短，及时行乐',icon:'🛋️'},
+  {text:'自由日',sub:'没有闹钟的一天真好',icon:'🕊️'},
+  {text:'美食时间',sub:'今天适合吃顿好的',icon:'🍰'},
+  {text:'追剧模式',sub:'窝在沙发上看剧真舒服',icon:'📺'},
+  {text:'运动日',sub:'出去走走，晒晒太阳',icon:'🏃'},
+  {text:'游戏时间',sub:'今天可以尽情玩了',icon:'🎮'},
+  {text:'约会日',sub:'去见想见的人吧',icon:'💑'},
+];
+
 function updateCountdown(){
   const now=new Date();
   const h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
+  const day=now.getDay(); // 0=Sun, 6=Sat
   
-  // Work hours: 9:00 - 18:00
+  const countdownCard=document.querySelector('.countdown-card');
+  const countdownLabel=document.querySelector('.countdown-label');
+  
+  // Weekend or non-workday
+  if(day===0||day===6){
+    countdownCard.style.background='linear-gradient(135deg,rgba(139,92,246,.2) 0%,rgba(236,72,153,.15) 100%)';
+    countdownCard.style.borderColor='rgba(139,92,246,.3)';
+    
+    // Pick a message based on date for consistency within the day
+    const seed=(now.getFullYear()*365+now.getMonth()*31+now.getDate())%weekendMsgs.length;
+    const msg=weekendMsgs[seed];
+    
+    countdownLabel.innerHTML=`<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>${msg.icon} ${msg.text}`;
+    document.getElementById('countdown-time').textContent='🎉 周末愉快';
+    document.getElementById('countdown-sub').textContent=msg.sub;
+    document.getElementById('countdown-bar').style.width='100%';
+    document.getElementById('countdown-bar').style.background='linear-gradient(90deg,#8b5cf6,#ec4899)';
+    return;
+  }
+  
+  // Workday styling
+  countdownCard.style.background='linear-gradient(135deg,rgba(16,185,129,.2) 0%,rgba(6,182,212,.15) 100%)';
+  countdownCard.style.borderColor='rgba(16,185,129,.3)';
+  countdownLabel.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>下班倒计时';
+  document.getElementById('countdown-bar').style.background='linear-gradient(90deg,#10b981,#06b6d4)';
+  
   const workStart=9*60;
   const workEnd=18*60;
   const currentMinutes=h*60+m;
@@ -365,7 +406,6 @@ function updateCountdown(){
   const remaining=workEnd-currentMinutes;
   
   if(currentMinutes<workStart){
-    // Before work
     const diff=workStart-currentMinutes;
     const dh=Math.floor(diff/60);
     const dm=diff%60;
@@ -373,12 +413,10 @@ function updateCountdown(){
     document.getElementById('countdown-sub').textContent='距离上班还有';
     document.getElementById('countdown-bar').style.width='0%';
   }else if(currentMinutes>=workEnd){
-    // After work
     document.getElementById('countdown-time').textContent='🎉 下班啦！';
     document.getElementById('countdown-sub').textContent='辛苦了，好好休息~';
     document.getElementById('countdown-bar').style.width='100%';
   }else{
-    // During work
     const rh=Math.floor(remaining/60);
     const rm=remaining%60;
     const rs=60-s;
