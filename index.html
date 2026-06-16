@@ -262,10 +262,11 @@ body{font-family:-apple-system,sans-serif;min-height:100vh;min-height:100dvh;pad
 
   <div class="card fade" style="animation-delay:.23s">
     <div class="card-header">
-      <div class="card-title">🎵 网易云音乐</div>
+      <div class="card-title">🎵 音乐</div>
       <div style="display:flex;align-items:center;gap:6px">
         <span style="font-size:10px">🔈</span>
-        <input type="range" min="0" max="100" value="40" style="width:50px;height:3px;-webkit-appearance:none;background:rgba(255,255,255,.15);border-radius:2px" oninput="setVol(this.value)">
+        <input type="range" min="0" max="100" value="35" style="width:50px;height:3px;-webkit-appearance:none;background:rgba(255,255,255,.15);border-radius:2px" oninput="setVol(this.value)">
+        <button class="filter" id="mode-btn" onclick="switchMode(musicMode==='ambient'?'netease':'ambient')" style="font-size:9px">切换歌单</button>
       </div>
     </div>
     <div class="music-bar">
@@ -273,8 +274,8 @@ body{font-family:-apple-system,sans-serif;min-height:100vh;min-height:100dvh;pad
       <button class="music-btn play" id="play-btn" onclick="togglePlay()" style="width:32px;height:32px;font-size:13px">▶</button>
       <button class="music-btn ctrl" onclick="nextTrack()" style="width:26px;height:26px;font-size:10px">⏭</button>
       <div class="music-info">
-        <div class="music-name" id="music-name">选择一个歌单</div>
-        <div class="music-artist" id="music-artist">点击列表播放</div>
+        <div class="music-name" id="music-name">环境音效</div>
+        <div class="music-artist" id="music-artist">点击播放</div>
       </div>
       <div class="music-visualizer" id="visualizer" style="display:none"><span></span><span></span><span></span><span></span></div>
     </div>
@@ -535,7 +536,6 @@ function updateCountdown(){
 }
 
 // ===== Music Player =====
-const NCM_API='https://api.paugram.com/netease';
 const neteasePlaylists=[
   {name:'轻音乐合集',desc:'放松心情',icon:'🎵',id:'2829883282'},
   {name:'助眠白噪音',desc:'深度睡眠',icon:'😴',id:'2464480762'},
@@ -546,16 +546,21 @@ const neteasePlaylists=[
   {name:'电子氛围',desc:'沉浸感',icon:'🌊',id:'10494048785'},
   {name:'日系清新',desc:'治愈系',icon:'🌸',id:'4874984645'},
 ];
-let curTrack=-1,playing=false,audioEl=null,curPlaylist=[],curSongIdx=0;
-let apiAvailable=true;
-
-async function testAPI(){
-  try{const r=await fetch(NCM_API+'?type=playlist&id=1',{signal:AbortSignal.timeout(5000)});apiAvailable=r.ok}catch(e){apiAvailable=false}
-}
+const ambientTracks=[
+  {name:'雨声白噪音',desc:'助眠专注',icon:'🌧️',type:'rain'},
+  {name:'海浪声',desc:'放松冥想',icon:'🌊',type:'ocean'},
+  {name:'篝火声',desc:'温暖舒适',icon:'🔥',type:'fire'},
+  {name:'风声',desc:'空灵宁静',icon:'💨',type:'wind'},
+  {name:'森林鸟鸣',desc:'自然清新',icon:'🌲',type:'forest'},
+  {name:'夜晚虫鸣',desc:'乡村宁静',icon:'🦗',type:'night'},
+];
+let curTrack=-1,playing=false,audioCtx=null,audioEl=null,curNodes=[];
+let musicMode='ambient';
 
 function renderMusicList(){
-  document.getElementById('music-list').innerHTML=neteasePlaylists.map((t,i)=>`
-    <div class="music-track ${i===curTrack?'active':''}" onclick="loadPlaylist(${i})">
+  const list=musicMode==='ambient'?ambientTracks:neteasePlaylists;
+  document.getElementById('music-list').innerHTML=list.map((t,i)=>`
+    <div class="music-track ${i===curTrack?'active':''}" onclick="${musicMode==='ambient'?`playAmbient(${i})`:openNetease(t.id)}">
       <span class="music-track-icon">${t.icon}</span>
       <div class="music-track-info">
         <div class="music-track-name">${t.name}</div>
@@ -565,83 +570,62 @@ function renderMusicList(){
     </div>`).join('');
 }
 
-async function loadPlaylist(i){
-  const pl=neteasePlaylists[i];
-  curTrack=i;
-  document.getElementById('music-name').textContent='⏳ 加载中...';
-  document.getElementById('music-artist').textContent=pl.desc;
+function switchMode(m){
+  musicMode=m;curTrack=-1;playing=false;
+  stopAmbient();
+  document.getElementById('play-btn').textContent='▶';
+  document.getElementById('visualizer').style.display='none';
+  document.getElementById('music-name').textContent=m==='ambient'?'环境音效':'网易云歌单';
+  document.getElementById('music-artist').textContent=m==='ambient'?'点击播放':'点击跳转网易云';
+  document.getElementById('mode-btn').textContent=m==='ambient'?'切换歌单':'切换环境音';
   renderMusicList();
-  
-  if(!apiAvailable){
-    window.open(`https://music.163.com/#/playlist?id=${pl.id}`,'_blank');
-    document.getElementById('music-name').textContent='已在新窗口打开';
-    return;
-  }
-
-  try{
-    const r=await fetch(`${NCM_API}?type=playlist&id=${pl.id}`,{signal:AbortSignal.timeout(8000)});
-    const d=await r.json();
-    curPlaylist=(d.songs||d.playlist?.tracks||[]).slice(0,30);
-    if(curPlaylist.length){
-      document.getElementById('music-name').textContent=pl.name;
-      document.getElementById('music-artist').textContent=`${curPlaylist.length}首 · ${pl.desc}`;
-      playSong(0);
-    }else{
-      window.open(`https://music.163.com/#/playlist?id=${pl.id}`,'_blank');
-      document.getElementById('music-name').textContent='已在新窗口打开';
-    }
-  }catch(e){
-    apiAvailable=false;
-    window.open(`https://music.163.com/#/playlist?id=${pl.id}`,'_blank');
-    document.getElementById('music-name').textContent='已在新窗口打开';
-  }
 }
 
-async function playSong(idx){
-  if(idx<0||idx>=curPlaylist.length)return;
-  const song=curPlaylist[idx];
-  try{
-    const r=await fetch(`${NCM_API}?type=song&id=${song.id}`,{signal:AbortSignal.timeout(8000)});
-    const d=await r.json();
-    const url=d.url||d.data?.[0]?.url;
-    if(!url){
-      document.getElementById('music-name').textContent=`⚠️ ${song.name} 需VIP`;
-      curSongIdx=idx;
-      return;
-    }
-    if(!audioEl)initMusic();
-    audioEl.src=url;
-    audioEl.play();
-    playing=true;
-    curSongIdx=idx;
-    document.getElementById('music-name').textContent=song.name||song.title;
-    document.getElementById('music-artist').textContent=(song.ar||song.artists||[]).map(a=>a.name).join('/')+' · '+(song.al?.name||song.album?.name||'');
-    document.getElementById('play-btn').textContent='⏸';
-    document.getElementById('visualizer').style.display='flex';
-    renderMusicList();
-  }catch(e){
-    document.getElementById('music-name').textContent='⚠️ 播放失败，点击歌单名打开网易云';
-  }
+function openNetease(id){window.open(`https://music.163.com/#/playlist?id=${id}`,'_blank')}
+
+// ===== Ambient Sound Engine =====
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
+function stopAmbient(){curNodes.forEach(n=>{try{n.stop&&n.stop();n.disconnect&&n.disconnect()}catch(e){}});curNodes=[]}
+
+function createNoise(ctx,type){
+  const len=ctx.sampleRate*2;const buf=ctx.createBuffer(1,len,ctx.sampleRate);const data=buf.getChannelData(0);
+  if(type==='pink'){let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;for(let i=0;i<len;i++){const w=Math.random()*2-1;b0=.99886*b0+w*.0555179;b1=.99332*b1+w*.0750759;b2=.969*b2+w*.153852;b3=.8665*b3+w*.3104856;b4=.55*b4+w*.5329522;b5=-.7616*b5-w*.016898;data[i]=(b0+b1+b2+b3+b4+b5+b6+w*.5362)*.11;b6=w*.115926}}
+  else if(type==='brown'){let last=0;for(let i=0;i<len;i++){const w=Math.random()*2-1;data[i]=(last+.02*w)/1.02;last=data[i];data[i]*=3.5}}
+  else{for(let i=0;i<len;i++)data[i]=Math.random()*2-1}
+  return buf;
+}
+
+function playAmbientSound(type){
+  stopAmbient();const ctx=getCtx();curNodes=[];
+  const gain=ctx.createGain();gain.connect(ctx.destination);gain.gain.value=.35;curNodes.push(gain);
+  const P=(t,fopts)=>{const n=ctx.createBufferSource();n.buffer=createNoise(ctx,'pink');n.loop=true;const f=ctx.createBiquadFilter();f.type=t;Object.assign(f,fopts);return[n,f]};
+  if(type==='rain'){const[n,f]=P('bandpass',{frequency:800,Q:.5});const g=ctx.createGain();g.gain.value=.6;n.connect(f);f.connect(g);g.connect(gain);n.start();curNodes.push(n,f,g)}
+  else if(type==='ocean'){const n=ctx.createBufferSource();n.buffer=createNoise(ctx,'brown');n.loop=true;const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=400;const lfo=ctx.createOscillator();lfo.frequency.value=.1;const lg=ctx.createGain();lg.gain.value=300;lfo.connect(lg);lg.connect(f.frequency);lfo.start();n.connect(f);f.connect(gain);n.start();curNodes.push(n,f,lfo,lg)}
+  else if(type==='fire'){const n=ctx.createBufferSource();n.buffer=createNoise(ctx,'brown');n.loop=true;const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=600;f.Q.value=1.5;const g=ctx.createGain();g.gain.value=.4;n.connect(f);f.connect(g);g.connect(gain);n.start();curNodes.push(n,f,g)}
+  else if(type==='wind'){const[n,f]=P('lowpass',{frequency:300});const lfo=ctx.createOscillator();lfo.frequency.value=.07;const lg=ctx.createGain();lg.gain.value=200;lfo.connect(lg);lg.connect(f.frequency);lfo.start();n.connect(f);f.connect(gain);n.start();curNodes.push(n,f,lfo,lg)}
+  else if(type==='forest'){const[n,f]=P('bandpass',{frequency:2000,Q:3});const g=ctx.createGain();g.gain.value=.1;n.connect(f);f.connect(g);g.connect(gain);n.start();curNodes.push(n,f,g)}
+  else if(type==='night'){const n=ctx.createBufferSource();n.buffer=createNoise(ctx,'brown');n.loop=true;const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=4000;f.Q.value=8;const g=ctx.createGain();g.gain.value=.08;n.connect(f);f.connect(g);g.connect(gain);n.start();curNodes.push(n,f,g)}
+}
+
+function playAmbient(i){
+  if(curTrack===i&&playing){togglePlay();return}
+  curTrack=i;playing=true;playAmbientSound(ambientTracks[i].type);
+  document.getElementById('music-name').textContent=ambientTracks[i].name;
+  document.getElementById('music-artist').textContent=ambientTracks[i].desc;
+  document.getElementById('play-btn').textContent='⏸';
+  document.getElementById('visualizer').style.display='flex';
+  renderMusicList();
 }
 
 function togglePlay(){
-  if(!audioEl){loadPlaylist(0);return}
-  if(playing){audioEl.pause();playing=false}
-  else{audioEl.play().then(()=>{playing=true}).catch(()=>{})}
+  if(musicMode!=='ambient')return;
+  if(curTrack<0){playAmbient(0);return}
+  if(playing){stopAmbient();playing=false}else{playAmbientSound(ambientTracks[curTrack].type);playing=true}
   document.getElementById('play-btn').textContent=playing?'⏸':'▶';
   document.getElementById('visualizer').style.display=playing?'flex':'none';
 }
 
-function nextTrack(){if(curPlaylist.length)playSong((curSongIdx+1)%curPlaylist.length)}
-function prevTrack(){if(curPlaylist.length)playSong((curSongIdx-1+curPlaylist.length)%curPlaylist.length)}
-function setVol(v){if(audioEl)audioEl.volume=v/100}
-
-function initMusic(){
-  audioEl=document.createElement('audio');
-  audioEl.volume=0.4;
-  audioEl.addEventListener('ended',()=>{if(curPlaylist.length)playSong((curSongIdx+1)%curPlaylist.length)});
-}
-testAPI();
+function setVol(v){if(curNodes[0]&&curNodes[0].gain)curNodes[0].gain.value=v/100*.35}
 
 // ===== Weather =====
 const jokes=[
