@@ -263,17 +263,21 @@ body{font-family:-apple-system,sans-serif;min-height:100vh;min-height:100dvh;pad
   <div class="card fade" style="animation-delay:.23s">
     <div class="card-header">
       <div class="card-title">🎵 网易云音乐</div>
-      <div style="display:flex;gap:4px">
-        <button class="music-btn ctrl" onclick="prevTrack()" style="width:24px;height:24px;font-size:10px">⏮</button>
-        <button class="music-btn play" id="play-btn" onclick="togglePlay()" style="width:28px;height:28px;font-size:12px">▶</button>
-        <button class="music-btn ctrl" onclick="nextTrack()" style="width:24px;height:24px;font-size:10px">⏭</button>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:10px">🔈</span>
+        <input type="range" min="0" max="100" value="40" style="width:50px;height:3px;-webkit-appearance:none;background:rgba(255,255,255,.15);border-radius:2px" oninput="setVol(this.value)">
       </div>
     </div>
-    <div class="music-info" style="margin-bottom:8px">
-      <div class="music-name" id="music-name">选择一个歌单</div>
-      <div class="music-artist" id="music-artist">点击下方列表播放</div>
+    <div class="music-bar">
+      <button class="music-btn ctrl" onclick="prevTrack()" style="width:26px;height:26px;font-size:10px">⏮</button>
+      <button class="music-btn play" id="play-btn" onclick="togglePlay()" style="width:32px;height:32px;font-size:13px">▶</button>
+      <button class="music-btn ctrl" onclick="nextTrack()" style="width:26px;height:26px;font-size:10px">⏭</button>
+      <div class="music-info">
+        <div class="music-name" id="music-name">选择一个歌单</div>
+        <div class="music-artist" id="music-artist">点击列表播放</div>
+      </div>
+      <div class="music-visualizer" id="visualizer" style="display:none"><span></span><span></span><span></span><span></span></div>
     </div>
-    <div id="player-wrap" style="display:none;margin-bottom:8px"></div>
     <div class="music-list" id="music-list"></div>
   </div>
 
@@ -531,6 +535,7 @@ function updateCountdown(){
 }
 
 // ===== Music Player =====
+const NCM_API='https://netease-cloud-music-api-five-roan.vercel.app';
 const neteasePlaylists=[
   {name:'轻音乐合集',desc:'放松心情',icon:'🎵',id:'2829883282'},
   {name:'助眠白噪音',desc:'深度睡眠',icon:'😴',id:'2464480762'},
@@ -541,12 +546,11 @@ const neteasePlaylists=[
   {name:'电子氛围',desc:'沉浸感',icon:'🌊',id:'10494048785'},
   {name:'日系清新',desc:'治愈系',icon:'🌸',id:'4874984645'},
 ];
-let curTrack=-1,playing=false,playerFrame=null;
-let neteaseToken='';
+let curTrack=-1,playing=false,audioEl=null,curPlaylist=[];
 
 function renderMusicList(){
   document.getElementById('music-list').innerHTML=neteasePlaylists.map((t,i)=>`
-    <div class="music-track ${i===curTrack?'active':''}" onclick="playTrack(${i})">
+    <div class="music-track ${i===curTrack?'active':''}" onclick="loadPlaylist(${i})">
       <span class="music-track-icon">${t.icon}</span>
       <div class="music-track-info">
         <div class="music-track-name">${t.name}</div>
@@ -556,36 +560,86 @@ function renderMusicList(){
     </div>`).join('');
 }
 
-function playTrack(i){
-  curTrack=i;playing=true;
-  const wrap=document.getElementById('player-wrap');
+async function loadPlaylist(i){
   const pl=neteasePlaylists[i];
-  wrap.innerHTML=`<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" 
-    src="https://music.163.com/outchain/player?type=4&id=${pl.id}&auto=0&height=432" 
-    style="width:100%;height:432px;border-radius:8px"></iframe>`;
-  wrap.style.display='block';
-  document.getElementById('music-name').textContent=pl.name;
+  curTrack=i;
+  document.getElementById('music-name').textContent='⏳ 加载中...';
   document.getElementById('music-artist').textContent=pl.desc;
-  document.getElementById('visualizer').style.display='flex';
-  document.getElementById('play-btn').textContent='⏸';
-  document.getElementById('play-btn').onclick=togglePlay;
   renderMusicList();
-}
-
-function togglePlay(){
-  if(curTrack<0){playTrack(0);return}
-  if(playing){
-    document.getElementById('play-btn').textContent='▶';
-    playing=false;document.getElementById('visualizer').style.display='none';
-    // Pause via postMessage not supported, just hide player
-  }else{
-    playTrack(curTrack);
+  try{
+    const r=await fetch(`${NCM_API}/playlist/detail?id=${pl.id}`);
+    const d=await r.json();
+    curPlaylist=(d.playlist&&d.playlist.tracks)||[];
+    if(curPlaylist.length){
+      document.getElementById('music-name').textContent=pl.name;
+      document.getElementById('music-artist').textContent=`${curPlaylist.length}首 · ${pl.desc}`;
+      playSong(0);
+    }else{
+      document.getElementById('music-name').textContent='⚠️ 歌单加载失败';
+    }
+  }catch(e){
+    console.error('Load playlist error:',e);
+    document.getElementById('music-name').textContent='⚠️ 网络错误，请稍后再试';
   }
 }
 
-function nextTrack(){playTrack((curTrack+1)%neteasePlaylists.length)}
-function prevTrack(){playTrack((curTrack-1+neteasePlaylists.length)%neteasePlaylists.length)}
-function setVol(v){}
+async function playSong(idx){
+  if(idx<0||idx>=curPlaylist.length)return;
+  const song=curPlaylist[idx];
+  try{
+    const r=await fetch(`${NCM_API}/song/url?id=${song.id}`);
+    const d=await r.json();
+    const url=d.data&&d.data[0]&&d.data[0].url;
+    if(!url){
+      document.getElementById('music-name').textContent=`⚠️ ${song.name} 需VIP`;
+      return;
+    }
+    if(!audioEl){audioEl=document.createElement('audio');audioEl.addEventListener('ended',()=>playSong((curSongIdx+1)%curPlaylist.length))}
+    audioEl.src=url;
+    audioEl.play();
+    playing=true;
+    curSongIdx=idx;
+    document.getElementById('music-name').textContent=song.name;
+    document.getElementById('music-artist').textContent=(song.ar||[]).map(a=>a.name).join('/')+' · '+(song.al&&song.al.name||'');
+    document.getElementById('play-btn').textContent='⏸';
+    document.getElementById('visualizer').style.display='flex';
+    renderMusicList();
+  }catch(e){
+    console.error('Play song error:',e);
+    document.getElementById('music-name').textContent='⚠️ 播放失败';
+  }
+}
+let curSongIdx=0;
+
+function togglePlay(){
+  if(!audioEl){loadPlaylist(0);return}
+  if(playing){audioEl.pause();playing=false}
+  else{audioEl.play();playing=true}
+  document.getElementById('play-btn').textContent=playing?'⏸':'▶';
+  document.getElementById('visualizer').style.display=playing?'flex':'none';
+}
+
+function nextTrack(){if(curPlaylist.length)playSong((curSongIdx+1)%curPlaylist.length)}
+function prevTrack(){if(curPlaylist.length)playSong((curSongIdx-1+curPlaylist.length)%curPlaylist.length)}
+  function setVol(v){if(audioEl)audioEl.volume=v/100}
+
+function renderMusicList(){
+  document.getElementById('music-list').innerHTML=neteasePlaylists.map((t,i)=>`
+    <div class="music-track ${i===curTrack?'active':''}" onclick="loadPlaylist(${i})">
+      <span class="music-track-icon">${t.icon}</span>
+      <div class="music-track-info">
+        <div class="music-track-name">${t.name}</div>
+        <div class="music-track-desc">${t.desc}</div>
+      </div>
+      ${i===curTrack&&playing?'<div class="music-visualizer"><span></span><span></span><span></span><span></span></div>':''}
+    </div>`).join('');
+}
+
+function initMusic(){
+  audioEl=document.createElement('audio');
+  audioEl.volume=0.4;
+  audioEl.addEventListener('ended',()=>{if(curPlaylist.length)playSong((curSongIdx+1)%curPlaylist.length)});
+}
 
 // ===== Weather =====
 const jokes=[
@@ -831,6 +885,7 @@ async function init(){
   getMyId();renderEmojiBar();renderWall();
   renderJoke();
   renderMusicList();
+  initMusic();
   
   if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
   updateCopyBtn();
