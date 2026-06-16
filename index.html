@@ -199,6 +199,14 @@ body{font-family:-apple-system,sans-serif;min-height:100vh;min-height:100dvh;pad
     </div>
   </div>
 
+  <div class="card fade" style="animation-delay:.22s;border-left:3px solid #f59e0b">
+    <div class="card-header">
+      <div class="card-title">😂 每日一笑</div>
+      <button class="card-link" onclick="nextJoke()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:11px">换一个 →</button>
+    </div>
+    <div id="joke-content" style="font-size:13px;line-height:1.6;color:#e2e8f0;min-height:40px"></div>
+  </div>
+
   <div class="card fade" style="animation-delay:.25s">
     <div class="card-header">
       <div class="card-title">👹 匿名吐槽墙 <span class="badge" style="background:linear-gradient(135deg,#8b5cf6,#6366f1)">ANON</span></div>
@@ -453,6 +461,33 @@ function updateCountdown(){
 }
 
 // ===== Weather =====
+const jokes=[
+  '程序员最怕什么？——怕改需求。更怕什么？——改完又改回来。',
+  '老婆问我："你要是中了500万第一件事做什么？"我说："离婚。"她说："那第二件呢？"我说："把你娶回来。"',
+  '医生："你这个病很严重。"我："那怎么办？"医生："别担心，我刚拿你练了练手，现在给别人看就不会出错了。"',
+  '面试官："你期望的薪资是多少？"我："30k。"面试官："我们可以给你40k。"我："那我期望50k。"',
+  '上课时老师问小明："你知道为什么要叫星期五吗？"小明："因为前面四天都盼着它。"',
+  '一只蜗牛慢慢爬上苹果树，毛毛虫问："你来干嘛？"蜗牛说："苹果不是还没熟吗，我先到等着。"',
+  '老板："你为什么迟到？"员工："路上堵车。"老板："你不是骑自行车的吗？"员工："堵自行车。"',
+  '小明："爸爸，我是不是傻孩子？"爸爸："傻孩子，你怎么会是傻孩子呢。"',
+  '减肥的秘诀就一个字：忍。忍不了怎么办？——再忍忍。',
+  '今天去超市，看到一瓶酸奶写着"活的乳酸菌"，我想这菌也太惨了，还要上班。',
+  '我的体重很有礼貌，别人给我好吃的它会说"谢谢，我先膨胀一下"。',
+  '别人都关心你飞得高不高，只有我关心你的代码能不能跑。',
+  '人生就像写代码，删了又写，写了又删，最后发现还是第一版好。',
+  '上班的心情比上坟还沉重，但上坟不会被领导骂。',
+  '我这辈子最大的遗憾就是——没钱。除此之外一切都好，比如还有第二个遗憾。',
+  '小时候以为读书是为了离开家乡，长大后发现是为了离开公司。',
+  '有人说钱买不到快乐，那是因为你钱不够多。',
+  '早起的鸟儿有虫吃，早起的虫子被鸟吃。所以关键不是早起，是你是鸟还是虫。',
+  '努力不一定成功，但不努力一定很舒服。',
+  '每次下定决心减肥的时候，我的胃都会投反对票，而且一票否决。',
+];
+let jokeIdx=new Date().getDate()%jokes.length;
+function renderJoke(){document.getElementById('joke-content').textContent=jokes[jokeIdx]}
+function nextJoke(){jokeIdx=(jokeIdx+1)%jokes.length;renderJoke()}
+
+// ===== Weather =====
 async function fetchWeather(){
   try{
     const r=await fetch('https://wttr.in/?format=j1');
@@ -599,6 +634,7 @@ async function init(){
   fetchWeather();setInterval(fetchWeather,600000);
   renderMatches();renderTodos();
   getMyId();renderEmojiBar();renderWall();
+  renderJoke();
   
   if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
   updateCopyBtn();
