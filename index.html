@@ -284,8 +284,6 @@ body{font-family:-apple-system,sans-serif;min-height:100vh;min-height:100dvh;pad
     <div class="music-list" id="music-list"></div>
   </div>
 
-  <audio id="music-audio" preload="none"></audio>
-
   <div class="card fade" style="animation-delay:.25s">
     <div class="card-header">
       <div class="card-title">👹 匿名吐槽墙 <span class="badge" style="background:linear-gradient(135deg,#8b5cf6,#6366f1)">ANON</span></div>
@@ -541,17 +539,158 @@ function updateCountdown(){
 
 // ===== Music Player =====
 const musicTracks=[
-  {name:'雨声白噪音',desc:'助眠专注',icon:'🌧️',url:'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg'},
-  {name:'海浪声',desc:'放松冥想',icon:'🌊',url:'https://actions.google.com/sounds/v1/weather/waves_crashing_on_rocky_shore.ogg'},
-  {name:'篝火声',desc:'温暖舒适',icon:'🔥',url:'https://actions.google.com/sounds/v1/ambiences/campfire.ogg'},
-  {name:'鸟鸣森林',desc:'自然清新',icon:'🌲',url:'https://actions.google.com/sounds/v1/ambiences/forest_with_birds.ogg'},
-  {name:'雷暴声',desc:'深度专注',icon:'⛈️',url:'https://actions.google.com/sounds/v1/weather/thunder_and_rain_heavy.ogg'},
-  {name:'风声',desc:'空灵宁静',icon:'💨',url:'https://actions.google.com/sounds/v1/weather/wind_gusty.ogg'},
-  {name:'夜晚虫鸣',desc:'乡村宁静',icon:'🦗',url:'https://actions.google.com/sounds/v1/ambiences/night_forest_with_insects.ogg'},
-  {name:'溪流声',desc:'山间清幽',icon:'🏔️',url:'https://actions.google.com/sounds/v1/water/stream_pebbles_large.ogg'},
+  {name:'雨声白噪音',desc:'助眠专注',icon:'🌧️',type:'rain'},
+  {name:'海浪声',desc:'放松冥想',icon:'🌊',type:'ocean'},
+  {name:'篝火声',desc:'温暖舒适',icon:'🔥',type:'fire'},
+  {name:'风声',desc:'空灵宁静',icon:'💨',type:'wind'},
+  {name:'森林鸟鸣',desc:'自然清新',icon:'🌲',type:'forest'},
+  {name:'夜晚虫鸣',desc:'乡村宁静',icon:'🦗',type:'night'},
+  {name:'溪流声',desc:'山间清幽',icon:'🏔️',type:'stream'},
+  {name:'深海低频',desc:'深度放松',icon:'🐋',type:'deep'},
 ];
-const audio=document.getElementById('music-audio');
-let curTrack=-1,playing=false;
+let audioCtx=null,curTrack=-1,playing=false,curNodes=[];
+
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
+
+function stopSound(){curNodes.forEach(n=>{try{n.stop&&n.stop();n.disconnect&&n.disconnect()}catch(e){}});curNodes=[]}
+
+function createNoise(ctx,type){
+  const len=ctx.sampleRate*2;
+  const buf=ctx.createBuffer(1,len,ctx.sampleRate);
+  const data=buf.getChannelData(0);
+  if(type==='pink'){
+    let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
+    for(let i=0;i<len;i++){
+      const w=Math.random()*2-1;
+      b0=.99886*b0+w*.0555179;b1=.99332*b1+w*.0750759;b2=.969*b2+w*.153852;
+      b3=.8665*b3+w*.3104856;b4=.55*b4+w*.5329522;b5=-.7616*b5-w*.016898;
+      data[i]=(b0+b1+b2+b3+b4+b5+b6+w*.5362)*.11;b6=w*.115926;
+    }
+  }else if(type==='brown'){
+    let last=0;
+    for(let i=0;i<len;i++){const w=Math.random()*2-1;data[i]=(last+.02*w)/1.02;last=data[i];data[i]*=3.5}
+  }else{
+    for(let i=0;i<len;i++)data[i]=Math.random()*2-1;
+  }
+  return buf;
+}
+
+function playSound(type){
+  stopSound();const ctx=getCtx();curNodes=[];
+  const gain=ctx.createGain();gain.connect(ctx.destination);gain.gain.value=.4;
+  curNodes.push(gain);
+
+  if(type==='rain'){
+    const n=ctx.createBufferSource();n.buffer=createNoise(ctx,'pink');n.loop=true;
+    const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=800;f.Q.value=.5;
+    const g2=ctx.createGain();g2.gain.value=.6;
+    n.connect(f);f.connect(g2);g2.connect(gain);n.start();curNodes.push(n,f,g2);
+  }else if(type==='ocean'){
+    const n=ctx.createBufferSource();n.buffer=createNoise(ctx,'brown');n.loop=true;
+    const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=400;
+    const lfo=ctx.createOscillator();lfo.frequency.value=.1;
+    const lfoG=ctx.createGain();lfoG.gain.value=300;
+    lfo.connect(lfoG);lfoG.connect(f.frequency);lfo.start();
+    n.connect(f);f.connect(gain);n.start();curNodes.push(n,f,lfo,lfoG);
+  }else if(type==='fire'){
+    const n=ctx.createBufferSource();n.buffer=createNoise(ctx,'brown');n.loop=true;
+    const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=600;f.Q.value=1.5;
+    const g2=ctx.createGain();g2.gain.value=.4;
+    n.connect(f);f.connect(g2);g2.connect(gain);n.start();curNodes.push(n,f,g2);
+    function pop(){if(!playing)return;const o=ctx.createOscillator();o.type='sawtooth';o.frequency.value=80+Math.random()*200;
+      const p=ctx.createGain();p.gain.value=.05+Math.random()*.05;p.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.1+Math.random()*.1);
+      o.connect(p);p.connect(gain);o.start();o.stop(ctx.currentTime+.15);setTimeout(pop,50+Math.random()*300)}
+    pop();
+  }else if(type==='wind'){
+    const n=ctx.createBufferSource();n.buffer=createNoise(ctx,'pink');n.loop=true;
+    const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=300;
+    const lfo=ctx.createOscillator();lfo.frequency.value=.07;
+    const lfoG=ctx.createGain();lfoG.gain.value=200;
+    lfo.connect(lfoG);lfoG.connect(f.frequency);lfo.start();
+    n.connect(f);f.connect(gain);n.start();curNodes.push(n,f,lfo,lfoG);
+  }else if(type==='forest'){
+    const n=ctx.createBufferSource();n.buffer=createNoise(ctx,'pink');n.loop=true;
+    const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=2000;f.Q.value=3;
+    const g2=ctx.createGain();g2.gain.value=.1;
+    n.connect(f);f.connect(g2);g2.connect(gain);n.start();curNodes.push(n,f,g2);
+    function chirp(){if(!playing)return;const o=ctx.createOscillator();o.type='sine';o.frequency.value=2000+Math.random()*3000;
+      const p=ctx.createGain();p.gain.value=.03;p.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+.08);
+      o.connect(p);p.connect(gain);o.start();o.stop(ctx.currentTime+.1);setTimeout(chirp,200+Math.random()*2000)}
+    chirp();
+  }else if(type==='night'){
+    const n=ctx.createBufferSource();n.buffer=createNoise(ctx,'brown');n.loop=true;
+    const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=4000;f.Q.value=8;
+    const g2=ctx.createGain();g2.gain.value=.08;
+    n.connect(f);f.connect(g2);g2.connect(gain);n.start();curNodes.push(n,f,g2);
+    function cricket(){if(!playing)return;const o=ctx.createOscillator();o.type='sine';o.frequency.value=4500+Math.random()*1000;
+      const p=ctx.createGain();p.gain.value=.04;
+      for(let i=0;i<3;i++){p.gain.setValueAtTime(.04,ctx.currentTime+i*.06);p.gain.setValueAtTime(0,ctx.currentTime+i*.06+.03)}
+      o.connect(p);p.connect(gain);o.start();o.stop(ctx.currentTime+.2);setTimeout(cricket,300+Math.random()*1500)}
+    cricket();
+  }else if(type==='stream'){
+    const n=ctx.createBufferSource();n.buffer=createNoise(ctx,'pink');n.loop=true;
+    const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=1200;f.Q.value=1;
+    const lfo=ctx.createOscillator();lfo.frequency.value=.3;
+    const lfoG=ctx.createGain();lfoG.gain.value=400;
+    lfo.connect(lfoG);lfoG.connect(f.frequency);lfo.start();
+    const g2=ctx.createGain();g2.gain.value=.3;
+    n.connect(f);f.connect(g2);g2.connect(gain);n.start();curNodes.push(n,f,lfo,lfoG,g2);
+  }else if(type==='deep'){
+    const o1=ctx.createOscillator();o1.type='sine';o1.frequency.value=60;
+    const o2=ctx.createOscillator();o2.type='sine';o2.frequency.value=62;
+    const lfo=ctx.createOscillator();lfo.frequency.value=.05;
+    const lfoG=ctx.createGain();lfoG.gain.value=15;
+    lfo.connect(lfoG);lfoG.connect(o1.frequency);lfo.start();
+    const g2=ctx.createGain();g2.gain.value=.25;
+    o1.connect(g2);o2.connect(g2);g2.connect(gain);o1.start();o2.start();
+    curNodes.push(o1,o2,lfo,lfoG,g2);
+  }
+}
+
+function playTrack(i){
+  if(curTrack===i&&playing){togglePlay();return}
+  curTrack=i;playing=true;
+  playSound(musicTracks[i].type);
+  updateMusicUI();
+}
+
+function togglePlay(){
+  if(curTrack<0){playTrack(0);return}
+  if(playing){
+    stopSound();playing=false;
+    if(audioCtx&&audioCtx.state==='running')audioCtx.suspend();
+  }else{
+    if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();
+    playSound(musicTracks[curTrack].type);playing=true;
+  }
+  updateMusicUI();
+}
+
+function nextTrack(){playTrack((curTrack+1)%musicTracks.length)}
+function prevTrack(){playTrack((curTrack-1+musicTracks.length)%musicTracks.length)}
+
+function updateMusicUI(){
+  const btn=document.getElementById('play-btn');
+  const name=document.getElementById('music-name');
+  const artist=document.getElementById('music-artist');
+  const vis=document.getElementById('visualizer');
+  const fill=document.getElementById('music-fill');
+  btn.textContent=playing?'⏸':'▶';
+  if(curTrack>=0){
+    name.textContent=musicTracks[curTrack].name;
+    artist.textContent=musicTracks[curTrack].desc;
+  }
+  vis.style.display=playing?'flex':'none';
+  fill.style.width=playing?'100%':'0%';
+  renderMusicList();
+}
+
+function setVol(v){
+  const vol=v/100;
+  curNodes.forEach(n=>{if(n.gain&&n.gain.value!==undefined&&n!==curNodes[0]){}});
+  // Set master volume
+  if(curNodes[0]&&curNodes[0].gain)curNodes[0].gain.value=vol*.5;
+}
 
 function renderMusicList(){
   document.getElementById('music-list').innerHTML=musicTracks.map((t,i)=>`
@@ -564,66 +703,6 @@ function renderMusicList(){
       ${i===curTrack&&playing?'<div class="music-visualizer"><span></span><span></span><span></span><span></span></div>':''}
     </div>`).join('');
 }
-
-function playTrack(i){
-  if(curTrack===i&&playing){togglePlay();return}
-  curTrack=i;
-  audio.src=musicTracks[i].url;
-  audio.load();
-  audio.play().then(()=>{playing=true;updateMusicUI()}).catch(e=>{
-    console.error('Audio play failed:',e);
-    document.getElementById('music-name').textContent='⚠️ 加载失败，试试其他曲目';
-    updateMusicUI();
-  });
-}
-
-function togglePlay(){
-  if(curTrack<0){playTrack(0);return}
-  if(playing){audio.pause();playing=false}
-  else{audio.play().then(()=>{playing=true}).catch(()=>{})}
-  updateMusicUI();
-}
-
-function nextTrack(){playTrack((curTrack+1)%musicTracks.length)}
-function prevTrack(){playTrack((curTrack-1+musicTracks.length)%musicTracks.length)}
-
-function updateMusicUI(){
-  const btn=document.getElementById('play-btn');
-  const name=document.getElementById('music-name');
-  const artist=document.getElementById('music-artist');
-  const vis=document.getElementById('visualizer');
-  btn.textContent=playing?'⏸':'▶';
-  if(curTrack>=0){
-    name.textContent=musicTracks[curTrack].name;
-    artist.textContent=musicTracks[curTrack].desc;
-  }
-  vis.style.display=playing?'flex':'none';
-  renderMusicList();
-}
-
-function setVol(v){audio.volume=v/100}
-
-function seekTrack(e){
-  if(!audio.duration)return;
-  const rect=e.currentTarget.getBoundingClientRect();
-  const pct=(e.clientX-rect.left)/rect.width;
-  audio.currentTime=pct*audio.duration;
-}
-
-audio.addEventListener('timeupdate',()=>{
-  if(!audio.duration)return;
-  document.getElementById('music-fill').style.width=(audio.currentTime/audio.duration*100)+'%';
-});
-
-audio.addEventListener('ended',()=>{nextTrack()});
-audio.addEventListener('error',()=>{
-  if(curTrack>=0){
-    document.getElementById('music-name').textContent='⚠️ 该曲目加载失败';
-    playing=false;updateMusicUI();
-  }
-});
-
-audio.volume=0.3;
 
 // ===== Weather =====
 const jokes=[
