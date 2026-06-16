@@ -22,6 +22,26 @@ body{font-family:-apple-system,sans-serif;min-height:100vh;min-height:100dvh;pad
 @keyframes orbFloat{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-30px)}}
 .container{max-width:100%;position:relative;z-index:1}
 
+/* Weather Effects */
+.weather-fx{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;transition:background 2s}
+/* Rain */
+.rain-drop{position:absolute;width:2px;background:linear-gradient(transparent,rgba(150,200,255,.6));animation:rainFall linear infinite}
+@keyframes rainFall{0%{transform:translateY(-20px)}100%{transform:translateY(100vh)}}
+/* Snow */
+.snowflake{position:absolute;color:rgba(255,255,255,.8);animation:snowFall linear infinite;pointer-events:none}
+@keyframes snowFall{0%{transform:translateY(-20px) rotate(0deg)}100%{transform:translateY(100vh) rotate(360deg)}}
+/* Lightning */
+.lightning{position:fixed;inset:0;background:rgba(255,255,255,.15);opacity:0;pointer-events:none;z-index:0;transition:opacity .05s}
+/* Sun glow */
+.sun-glow{position:fixed;top:-100px;right:-100px;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(255,200,50,.25),transparent 70%);animation:sunPulse 4s ease-in-out infinite;pointer-events:none;z-index:0}
+@keyframes sunPulse{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.1);opacity:.9}}
+/* Stars */
+.star{position:fixed;width:2px;height:2px;background:#fff;border-radius:50%;animation:twinkle 2s ease-in-out infinite;pointer-events:none;z-index:0}
+@keyframes twinkle{0%,100%{opacity:.2}50%{opacity:1}}
+/* Mist */
+.mist{position:fixed;inset:0;background:linear-gradient(180deg,transparent,rgba(180,200,220,.15) 50%,transparent);animation:mistDrift 10s ease-in-out infinite alternate;pointer-events:none;z-index:0}
+@keyframes mistDrift{0%{transform:translateX(-3%)}100%{transform:translateX(3%)}}
+
 /* Header */
 .header{display:flex;justify-content:space-between;align-items:center;padding:4px 0 12px}
 .header h1{font-size:20px;font-weight:800;background:linear-gradient(135deg,#f8fafc,#94a3b8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -144,6 +164,8 @@ body{font-family:-apple-system,sans-serif;min-height:100vh;min-height:100dvh;pad
 <body>
 
 <div class="bg-orbs"><div class="bg-orb"></div><div class="bg-orb"></div></div>
+<div class="weather-fx" id="weather-fx"></div>
+<div class="lightning" id="lightning"></div>
 <div class="sync-status" id="sync-status">✓ 已同步</div>
 
 <div class="container">
@@ -488,6 +510,7 @@ function renderJoke(){document.getElementById('joke-content').textContent=jokes[
 function nextJoke(){jokeIdx=(jokeIdx+1)%jokes.length;renderJoke()}
 
 // ===== Weather =====
+let currentWeather='clear';
 async function fetchWeather(){
   try{
     const r=await fetch('https://wttr.in/?format=j1');
@@ -501,7 +524,73 @@ async function fetchWeather(){
     document.getElementById('w-desc').textContent=c.lang_zh?.[0]?.value||c.weatherDesc[0].value;
     document.getElementById('w-detail').textContent=`体感${c.FeelsLikeC}°C · 湿度${c.humidity}%`;
     document.getElementById('w-loc').textContent=`📍 ${d.nearest_area[0].areaName[0].value}`;
-  }catch(e){}
+    
+    let wtype='clear';
+    if(code>=200&&code<300)wtype='thunder';
+    else if(code>=300&&code<600)wtype='rain';
+    else if(code>=600&&code<700)wtype='snow';
+    else if(code>=700&&code<800)wtype='mist';
+    else if(code===800)wtype='sunny';
+    else wtype='cloudy';
+    
+    const h=new Date().getHours();
+    if(h>=18&&h<20)wtype='sunset';
+    else if(h>=20||h<6)wtype='night';
+    
+    if(wtype!==currentWeather){currentWeather=wtype;applyWeatherFx(wtype)}
+  }catch(e){applyWeatherFx('clear')}
+}
+
+function applyWeatherFx(type){
+  const fx=document.getElementById('weather-fx');
+  const body=document.body;
+  fx.innerHTML='';
+  const bodyBg=body.style;
+  
+  switch(type){
+    case'rain':
+      bodyBg.background='linear-gradient(135deg,#1a1a2e,#16213e,#0f3460)';
+      for(let i=0;i<80;i++){const d=document.createElement('div');d.className='rain-drop';d.style.left=Math.random()*100+'%';d.style.height=(15+Math.random()*20)+'px';d.style.animationDuration=(.4+Math.random()*.3)+'s';d.style.animationDelay=Math.random()*2+'s';d.style.opacity=.3+Math.random()*.4;fx.appendChild(d)}
+      break;
+    case'thunder':
+      bodyBg.background='linear-gradient(135deg,#0d1117,#1a1a2e,#16213e)';
+      for(let i=0;i<100;i++){const d=document.createElement('div');d.className='rain-drop';d.style.left=Math.random()*100+'%';d.style.height=(20+Math.random()*25)+'px';d.style.animationDuration=(.3+Math.random()*.3)+'s';d.style.animationDelay=Math.random()*2+'s';d.style.opacity=.4+Math.random()*.5;fx.appendChild(d)}
+      setInterval(()=>{if(Math.random()<.3){const l=document.getElementById('lightning');l.style.opacity='1';setTimeout(()=>l.style.opacity='0',80);setTimeout(()=>{l.style.opacity='.6';setTimeout(()=>l.style.opacity='0',60)},150)}},3000);
+      break;
+    case'snow':
+      bodyBg.background='linear-gradient(135deg,#2c3e50,#34495e,#2c3e50)';
+      for(let i=0;i<50;i++){const s=document.createElement('div');s.className='snowflake';s.textContent=['❄','❅','❆','•'][Math.floor(Math.random()*4)];s.style.left=Math.random()*100+'%';s.style.fontSize=(8+Math.random()*14)+'px';s.style.animationDuration=(4+Math.random()*6)+'s';s.style.animationDelay=Math.random()*5+'s';fx.appendChild(s)}
+      break;
+    case'sunny':
+      bodyBg.background='linear-gradient(135deg,#1e3a5f,#2d5a8e,#1e3a5f)';
+      const sg=document.createElement('div');sg.className='sun-glow';fx.appendChild(sg);
+      break;
+    case'sunset':
+      bodyBg.background='linear-gradient(180deg,#1a1a2e 0%,#e74c3c 40%,#f39c12 70%,#f1c40f 100%)';
+      const sg2=document.createElement('div');sg2.className='sun-glow';sg2.style.cssText='top:auto;bottom:-50px;right:10%;width:400px;height:400px;background:radial-gradient(circle,rgba(255,100,50,.35),transparent 70%)';fx.appendChild(sg2);
+      break;
+    case'night':
+      bodyBg.background='linear-gradient(135deg,#0a0a1a,#0d1b2a,#0a0a1a)';
+      for(let i=0;i<40;i++){const s=document.createElement('div');s.className='star';s.style.left=Math.random()*100+'%';s.style.top=Math.random()*60+'%';s.style.width=s.style.height=(1+Math.random()*2)+'px';s.style.animationDuration=(1.5+Math.random()*2)+'s';s.style.animationDelay=Math.random()*3+'s';fx.appendChild(s)}
+      break;
+    case'mist':
+      bodyBg.background='linear-gradient(135deg,#2c3e50,#34495e,#4a6741)';
+      for(let i=0;i<3;i++){const m=document.createElement('div');m.className='mist';m.style.animationDelay=i*3+'s';m.style.opacity=.3+Math.random()*.3;fx.appendChild(m)}
+      break;
+    case'cloudy':default:
+      bodyBg.background='linear-gradient(135deg,#1e293b,#2d3a4e,#1e293b)';
+      break;
+  }
+  document.querySelectorAll('.bg-orb').forEach(o=>o.style.opacity=type==='night'?'.15':'.3');
+}
+
+function applyTimeBg(){
+  const h=new Date().getHours();
+  if(currentWeather==='clear'){
+    if(h>=18&&h<20)applyWeatherFx('sunset');
+    else if(h>=20||h<6)applyWeatherFx('night');
+    else applyWeatherFx('cloudy');
+  }
 }
 
 // ===== Matches =====
@@ -632,6 +721,7 @@ async function init(){
   updateClock();setInterval(updateClock,1000);
   updateCountdown();setInterval(updateCountdown,1000);
   fetchWeather();setInterval(fetchWeather,600000);
+  applyTimeBg();setInterval(applyTimeBg,300000);
   renderMatches();renderTodos();
   getMyId();renderEmojiBar();renderWall();
   renderJoke();
