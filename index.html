@@ -149,6 +149,37 @@ body{font-family:-apple-system,sans-serif;min-height:100vh;min-height:100dvh;pad
 .emoji-bar{display:flex;gap:3px;margin-bottom:8px}
 .emoji-btn{width:26px;height:26px;border:1px solid rgba(255,255,255,.08);border-radius:5px;background:rgba(255,255,255,.03);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center}
 
+/* Music Player */
+.music-bar{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.music-btn{width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;transition:transform .2s}
+.music-btn:active{transform:scale(.9)}
+.music-btn.play{background:linear-gradient(135deg,var(--primary),#4f46e5);color:#fff}
+.music-btn.ctrl{background:rgba(255,255,255,.08);color:var(--text-muted)}
+.music-info{flex:1;min-width:0}
+.music-name{font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.music-artist{font-size:9px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.music-progress{height:3px;background:rgba(255,255,255,.1);border-radius:2px;cursor:pointer;position:relative}
+.music-progress-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--secondary));border-radius:2px;width:0%;transition:width .3s}
+.music-vol{display:flex;align-items:center;gap:4px}
+.music-vol input[type=range]{width:60px;height:3px;-webkit-appearance:none;background:rgba(255,255,255,.15);border-radius:2px;outline:none}
+.music-vol input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:10px;border-radius:50%;background:#fff;cursor:pointer}
+.music-list{max-height:140px;overflow-y:auto}
+.music-list::-webkit-scrollbar{width:2px}
+.music-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:1px}
+.music-track{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;cursor:pointer;transition:background .2s}
+.music-track:hover{background:rgba(255,255,255,.05)}
+.music-track.active{background:rgba(99,102,241,.15)}
+.music-track-icon{font-size:16px;flex-shrink:0}
+.music-track-info{flex:1;min-width:0}
+.music-track-name{font-size:10px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.music-track-desc{font-size:8px;color:var(--text-muted)}
+.music-visualizer{display:flex;align-items:flex-end;gap:2px;height:16px;margin-left:auto;flex-shrink:0}
+.music-visualizer span{width:3px;background:var(--primary);border-radius:1px;animation:visualizerPulse .8s ease-in-out infinite alternate}
+.music-visualizer span:nth-child(2){animation-delay:.2s}
+.music-visualizer span:nth-child(3){animation-delay:.4s}
+.music-visualizer span:nth-child(4){animation-delay:.1s}
+@keyframes visualizerPulse{0%{height:3px}100%{height:14px}}
+
 /* Sync Status */
 .sync-status{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:6px 14px;border-radius:20px;font-size:11px;z-index:100;opacity:0;transition:opacity .3s}
 .sync-status.show{opacity:1}
@@ -228,6 +259,32 @@ body{font-family:-apple-system,sans-serif;min-height:100vh;min-height:100dvh;pad
     </div>
     <div id="joke-content" style="font-size:13px;line-height:1.6;color:#e2e8f0;min-height:40px"></div>
   </div>
+
+  <div class="card fade" style="animation-delay:.23s">
+    <div class="card-header">
+      <div class="card-title">🎵 背景音乐</div>
+      <div class="music-vol" id="music-vol-wrap">
+        <span style="font-size:10px">🔈</span>
+        <input type="range" min="0" max="100" value="30" id="music-vol" oninput="setVol(this.value)">
+      </div>
+    </div>
+    <div class="music-bar">
+      <button class="music-btn ctrl" onclick="prevTrack()">⏮</button>
+      <button class="music-btn play" id="play-btn" onclick="togglePlay()">▶</button>
+      <button class="music-btn ctrl" onclick="nextTrack()">⏭</button>
+      <div class="music-info">
+        <div class="music-name" id="music-name">选择一首曲子</div>
+        <div class="music-artist" id="music-artist">点击播放</div>
+      </div>
+      <div class="music-visualizer" id="visualizer" style="display:none"><span></span><span></span><span></span><span></span></div>
+    </div>
+    <div class="music-progress" id="music-progress" onclick="seekTrack(event)">
+      <div class="music-progress-fill" id="music-fill"></div>
+    </div>
+    <div class="music-list" id="music-list"></div>
+  </div>
+
+  <audio id="music-audio" preload="none"></audio>
 
   <div class="card fade" style="animation-delay:.25s">
     <div class="card-header">
@@ -482,6 +539,82 @@ function updateCountdown(){
   }
 }
 
+// ===== Music Player =====
+const musicTracks=[
+  {name:'雨声白噪音',desc:'助眠专注',icon:'🌧️',url:'https://cdn.pixabay.com/audio/2022/03/10/audio_c4a4898758.mp3'},
+  {name:'咖啡馆氛围',desc:'轻松工作',icon:'☕',url:'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3'},
+  {name:'森林鸟鸣',desc:'自然清新',icon:'🌲',url:'https://cdn.pixabay.com/audio/2022/01/18/audio_d0ef905872.mp3'},
+  {name:'海浪声',desc:'放松冥想',icon:'🌊',url:'https://cdn.pixabay.com/audio/2022/08/02/audio_884fe92c20.mp3'},
+  {name:'钢琴轻音乐',desc:'舒缓心情',icon:'🎹',url:'https://cdn.pixabay.com/audio/2022/02/22/audio_d1718ab41b.mp3'},
+  {name:'篝火声',desc:'温暖舒适',icon:'🔥',url:'https://cdn.pixabay.com/audio/2020/10/30/audio_710e435893.mp3'},
+  {name:'夜晚虫鸣',desc:'乡村宁静',icon:'🦗',url:'https://cdn.pixabay.com/audio/2022/08/03/audio_0185526455.mp3'},
+  {name:'Lo-Fi节奏',desc:'学习伴侣',icon:'🎧',url:'https://cdn.pixabay.com/audio/2022/10/25/audio_614b236972.mp3'},
+];
+const audio=document.getElementById('music-audio');
+let curTrack=-1,playing=false;
+
+function renderMusicList(){
+  document.getElementById('music-list').innerHTML=musicTracks.map((t,i)=>`
+    <div class="music-track ${i===curTrack?'active':''}" onclick="playTrack(${i})">
+      <span class="music-track-icon">${t.icon}</span>
+      <div class="music-track-info">
+        <div class="music-track-name">${t.name}</div>
+        <div class="music-track-desc">${t.desc}</div>
+      </div>
+      ${i===curTrack&&playing?'<div class="music-visualizer"><span></span><span></span><span></span><span></span></div>':''}
+    </div>`).join('');
+}
+
+function playTrack(i){
+  if(curTrack===i&&playing){togglePlay();return}
+  curTrack=i;
+  audio.src=musicTracks[i].url;
+  audio.load();
+  audio.play().then(()=>{playing=true;updateMusicUI()}).catch(()=>{});
+}
+
+function togglePlay(){
+  if(curTrack<0){playTrack(0);return}
+  if(playing){audio.pause();playing=false}
+  else{audio.play().then(()=>{playing=true}).catch(()=>{})}
+  updateMusicUI();
+}
+
+function nextTrack(){playTrack((curTrack+1)%musicTracks.length)}
+function prevTrack(){playTrack((curTrack-1+musicTracks.length)%musicTracks.length)}
+
+function updateMusicUI(){
+  const btn=document.getElementById('play-btn');
+  const name=document.getElementById('music-name');
+  const artist=document.getElementById('music-artist');
+  const vis=document.getElementById('visualizer');
+  btn.textContent=playing?'⏸':'▶';
+  if(curTrack>=0){
+    name.textContent=musicTracks[curTrack].name;
+    artist.textContent=musicTracks[curTrack].desc;
+  }
+  vis.style.display=playing?'flex':'none';
+  renderMusicList();
+}
+
+function setVol(v){audio.volume=v/100}
+
+function seekTrack(e){
+  if(!audio.duration)return;
+  const rect=e.currentTarget.getBoundingClientRect();
+  const pct=(e.clientX-rect.left)/rect.width;
+  audio.currentTime=pct*audio.duration;
+}
+
+audio.addEventListener('timeupdate',()=>{
+  if(!audio.duration)return;
+  document.getElementById('music-fill').style.width=(audio.currentTime/audio.duration*100)+'%';
+});
+
+audio.addEventListener('ended',()=>{nextTrack()});
+
+audio.volume=0.3;
+
 // ===== Weather =====
 const jokes=[
   '程序员最怕什么？——怕改需求。更怕什么？——改完又改回来。',
@@ -725,6 +858,7 @@ async function init(){
   renderMatches();renderTodos();
   getMyId();renderEmojiBar();renderWall();
   renderJoke();
+  renderMusicList();
   
   if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
   updateCopyBtn();
