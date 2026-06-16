@@ -535,7 +535,7 @@ function updateCountdown(){
 }
 
 // ===== Music Player =====
-const NCM_API='https://netease-cloud-music-api-five-roan.vercel.app';
+const NCM_API='https://api.paugram.com/netease';
 const neteasePlaylists=[
   {name:'轻音乐合集',desc:'放松心情',icon:'🎵',id:'2829883282'},
   {name:'助眠白噪音',desc:'深度睡眠',icon:'😴',id:'2464480762'},
@@ -546,7 +546,12 @@ const neteasePlaylists=[
   {name:'电子氛围',desc:'沉浸感',icon:'🌊',id:'10494048785'},
   {name:'日系清新',desc:'治愈系',icon:'🌸',id:'4874984645'},
 ];
-let curTrack=-1,playing=false,audioEl=null,curPlaylist=[];
+let curTrack=-1,playing=false,audioEl=null,curPlaylist=[],curSongIdx=0;
+let apiAvailable=true;
+
+async function testAPI(){
+  try{const r=await fetch(NCM_API+'?type=playlist&id=1',{signal:AbortSignal.timeout(5000)});apiAvailable=r.ok}catch(e){apiAvailable=false}
+}
 
 function renderMusicList(){
   document.getElementById('music-list').innerHTML=neteasePlaylists.map((t,i)=>`
@@ -566,20 +571,29 @@ async function loadPlaylist(i){
   document.getElementById('music-name').textContent='⏳ 加载中...';
   document.getElementById('music-artist').textContent=pl.desc;
   renderMusicList();
+  
+  if(!apiAvailable){
+    window.open(`https://music.163.com/#/playlist?id=${pl.id}`,'_blank');
+    document.getElementById('music-name').textContent='已在新窗口打开';
+    return;
+  }
+
   try{
-    const r=await fetch(`${NCM_API}/playlist/detail?id=${pl.id}`);
+    const r=await fetch(`${NCM_API}?type=playlist&id=${pl.id}`,{signal:AbortSignal.timeout(8000)});
     const d=await r.json();
-    curPlaylist=(d.playlist&&d.playlist.tracks)||[];
+    curPlaylist=(d.songs||d.playlist?.tracks||[]).slice(0,30);
     if(curPlaylist.length){
       document.getElementById('music-name').textContent=pl.name;
       document.getElementById('music-artist').textContent=`${curPlaylist.length}首 · ${pl.desc}`;
       playSong(0);
     }else{
-      document.getElementById('music-name').textContent='⚠️ 歌单加载失败';
+      window.open(`https://music.163.com/#/playlist?id=${pl.id}`,'_blank');
+      document.getElementById('music-name').textContent='已在新窗口打开';
     }
   }catch(e){
-    console.error('Load playlist error:',e);
-    document.getElementById('music-name').textContent='⚠️ 网络错误，请稍后再试';
+    apiAvailable=false;
+    window.open(`https://music.163.com/#/playlist?id=${pl.id}`,'_blank');
+    document.getElementById('music-name').textContent='已在新窗口打开';
   }
 }
 
@@ -587,59 +601,47 @@ async function playSong(idx){
   if(idx<0||idx>=curPlaylist.length)return;
   const song=curPlaylist[idx];
   try{
-    const r=await fetch(`${NCM_API}/song/url?id=${song.id}`);
+    const r=await fetch(`${NCM_API}?type=song&id=${song.id}`,{signal:AbortSignal.timeout(8000)});
     const d=await r.json();
-    const url=d.data&&d.data[0]&&d.data[0].url;
+    const url=d.url||d.data?.[0]?.url;
     if(!url){
       document.getElementById('music-name').textContent=`⚠️ ${song.name} 需VIP`;
+      curSongIdx=idx;
       return;
     }
-    if(!audioEl){audioEl=document.createElement('audio');audioEl.addEventListener('ended',()=>playSong((curSongIdx+1)%curPlaylist.length))}
+    if(!audioEl)initMusic();
     audioEl.src=url;
     audioEl.play();
     playing=true;
     curSongIdx=idx;
-    document.getElementById('music-name').textContent=song.name;
-    document.getElementById('music-artist').textContent=(song.ar||[]).map(a=>a.name).join('/')+' · '+(song.al&&song.al.name||'');
+    document.getElementById('music-name').textContent=song.name||song.title;
+    document.getElementById('music-artist').textContent=(song.ar||song.artists||[]).map(a=>a.name).join('/')+' · '+(song.al?.name||song.album?.name||'');
     document.getElementById('play-btn').textContent='⏸';
     document.getElementById('visualizer').style.display='flex';
     renderMusicList();
   }catch(e){
-    console.error('Play song error:',e);
-    document.getElementById('music-name').textContent='⚠️ 播放失败';
+    document.getElementById('music-name').textContent='⚠️ 播放失败，点击歌单名打开网易云';
   }
 }
-let curSongIdx=0;
 
 function togglePlay(){
   if(!audioEl){loadPlaylist(0);return}
   if(playing){audioEl.pause();playing=false}
-  else{audioEl.play();playing=true}
+  else{audioEl.play().then(()=>{playing=true}).catch(()=>{})}
   document.getElementById('play-btn').textContent=playing?'⏸':'▶';
   document.getElementById('visualizer').style.display=playing?'flex':'none';
 }
 
 function nextTrack(){if(curPlaylist.length)playSong((curSongIdx+1)%curPlaylist.length)}
 function prevTrack(){if(curPlaylist.length)playSong((curSongIdx-1+curPlaylist.length)%curPlaylist.length)}
-  function setVol(v){if(audioEl)audioEl.volume=v/100}
-
-function renderMusicList(){
-  document.getElementById('music-list').innerHTML=neteasePlaylists.map((t,i)=>`
-    <div class="music-track ${i===curTrack?'active':''}" onclick="loadPlaylist(${i})">
-      <span class="music-track-icon">${t.icon}</span>
-      <div class="music-track-info">
-        <div class="music-track-name">${t.name}</div>
-        <div class="music-track-desc">${t.desc}</div>
-      </div>
-      ${i===curTrack&&playing?'<div class="music-visualizer"><span></span><span></span><span></span><span></span></div>':''}
-    </div>`).join('');
-}
+function setVol(v){if(audioEl)audioEl.volume=v/100}
 
 function initMusic(){
   audioEl=document.createElement('audio');
   audioEl.volume=0.4;
   audioEl.addEventListener('ended',()=>{if(curPlaylist.length)playSong((curSongIdx+1)%curPlaylist.length)});
 }
+testAPI();
 
 // ===== Weather =====
 const jokes=[
