@@ -541,14 +541,14 @@ function updateCountdown(){
 
 // ===== Music Player =====
 const musicTracks=[
-  {name:'雨声白噪音',desc:'助眠专注',icon:'🌧️',url:'https://cdn.pixabay.com/audio/2022/03/10/audio_c4a4898758.mp3'},
-  {name:'咖啡馆氛围',desc:'轻松工作',icon:'☕',url:'https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3'},
-  {name:'森林鸟鸣',desc:'自然清新',icon:'🌲',url:'https://cdn.pixabay.com/audio/2022/01/18/audio_d0ef905872.mp3'},
-  {name:'海浪声',desc:'放松冥想',icon:'🌊',url:'https://cdn.pixabay.com/audio/2022/08/02/audio_884fe92c20.mp3'},
-  {name:'钢琴轻音乐',desc:'舒缓心情',icon:'🎹',url:'https://cdn.pixabay.com/audio/2022/02/22/audio_d1718ab41b.mp3'},
-  {name:'篝火声',desc:'温暖舒适',icon:'🔥',url:'https://cdn.pixabay.com/audio/2020/10/30/audio_710e435893.mp3'},
-  {name:'夜晚虫鸣',desc:'乡村宁静',icon:'🦗',url:'https://cdn.pixabay.com/audio/2022/08/03/audio_0185526455.mp3'},
-  {name:'Lo-Fi节奏',desc:'学习伴侣',icon:'🎧',url:'https://cdn.pixabay.com/audio/2022/10/25/audio_614b236972.mp3'},
+  {name:'雨声白噪音',desc:'助眠专注',icon:'🌧️',url:'https://actions.google.com/sounds/v1/weather/rain_heavy_loud.ogg'},
+  {name:'海浪声',desc:'放松冥想',icon:'🌊',url:'https://actions.google.com/sounds/v1/weather/waves_crashing_on_rocky_shore.ogg'},
+  {name:'篝火声',desc:'温暖舒适',icon:'🔥',url:'https://actions.google.com/sounds/v1/ambiences/campfire.ogg'},
+  {name:'鸟鸣森林',desc:'自然清新',icon:'🌲',url:'https://actions.google.com/sounds/v1/ambiences/forest_with_birds.ogg'},
+  {name:'雷暴声',desc:'深度专注',icon:'⛈️',url:'https://actions.google.com/sounds/v1/weather/thunder_and_rain_heavy.ogg'},
+  {name:'风声',desc:'空灵宁静',icon:'💨',url:'https://actions.google.com/sounds/v1/weather/wind_gusty.ogg'},
+  {name:'夜晚虫鸣',desc:'乡村宁静',icon:'🦗',url:'https://actions.google.com/sounds/v1/ambiences/night_forest_with_insects.ogg'},
+  {name:'溪流声',desc:'山间清幽',icon:'🏔️',url:'https://actions.google.com/sounds/v1/water/stream_pebbles_large.ogg'},
 ];
 const audio=document.getElementById('music-audio');
 let curTrack=-1,playing=false;
@@ -570,7 +570,11 @@ function playTrack(i){
   curTrack=i;
   audio.src=musicTracks[i].url;
   audio.load();
-  audio.play().then(()=>{playing=true;updateMusicUI()}).catch(()=>{});
+  audio.play().then(()=>{playing=true;updateMusicUI()}).catch(e=>{
+    console.error('Audio play failed:',e);
+    document.getElementById('music-name').textContent='⚠️ 加载失败，试试其他曲目';
+    updateMusicUI();
+  });
 }
 
 function togglePlay(){
@@ -612,6 +616,12 @@ audio.addEventListener('timeupdate',()=>{
 });
 
 audio.addEventListener('ended',()=>{nextTrack()});
+audio.addEventListener('error',()=>{
+  if(curTrack>=0){
+    document.getElementById('music-name').textContent='⚠️ 该曲目加载失败';
+    playing=false;updateMusicUI();
+  }
+});
 
 audio.volume=0.3;
 
