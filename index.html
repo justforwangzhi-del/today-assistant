@@ -136,6 +136,13 @@ body{font-family:-apple-system,sans-serif;min-height:100vh;min-height:100dvh;pad
 /* Footer */
 .footer{text-align:center;padding:16px 0;font-size:9px;color:var(--text-muted)}
 
+/* Pet */
+.pet{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);font-size:36px;z-index:50;cursor:pointer;user-select:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3));transition:none}
+.pet:hover{filter:drop-shadow(0 0 8px rgba(99,102,241,.5))}
+.pet.speech{position:absolute;top:-32px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);color:#fff;padding:3px 8px;border-radius:10px;font-size:9px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .3s}
+.pet.speech.show{opacity:1}
+.paw{position:fixed;font-size:10px;opacity:.15;pointer-events:none;z-index:49;transition:opacity 2s}
+
 /* Animations */
 .fade{opacity:0;transform:translateY(12px);animation:fadeUp .4s ease forwards}
 @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
@@ -145,6 +152,7 @@ body{font-family:-apple-system,sans-serif;min-height:100vh;min-height:100dvh;pad
 
 <div class="bg-orbs"><div class="bg-orb"></div><div class="bg-orb"></div></div>
 <div class="sync-status" id="sync-status">✓ 已同步</div>
+<div class="pet" id="pet" onclick="petClick()"><span id="pet-face">🐱</span><div class="speech" id="pet-speech"></div></div>
 
 <div class="container">
   <div class="header fade">
@@ -487,6 +495,56 @@ let jokeIdx=new Date().getDate()%jokes.length;
 function renderJoke(){document.getElementById('joke-content').textContent=jokes[jokeIdx]}
 function nextJoke(){jokeIdx=(jokeIdx+1)%jokes.length;renderJoke()}
 
+// ===== Pet =====
+const petEl=document.getElementById('pet');
+const petFace=document.getElementById('pet-face');
+const petSpeech=document.getElementById('pet-speech');
+const faces=['😺','😸','😻','🙀','😿','🐱','😼'];
+const walks=['🐈','🐈‍⬛','🐱'];
+const speeches=['喵~','咕噜咕噜~','(伸懒腰)','(打哈欠)','摸摸我嘛~','今天的你很棒喵！','别忘了喝水喵~','(翻肚皮)','嘿嘿~','(蹭蹭腿)'];
+let petX=window.innerWidth/2-18,petY=window.innerHeight-120;
+let petVX=(Math.random()-.5)*2,petVY=(Math.random()-.5)*1.5;
+let petFrame=0,petDir=1,pawCount=0;
+
+function updatePet(){
+  petX+=petVX;petY+=petVY;
+  const w=window.innerWidth-36,h=window.innerHeight-36;
+  if(petX<10){petX=10;petVX=Math.abs(petVX)}
+  if(petX>w-10){petX=w-10;petVX=-Math.abs(petVX)}
+  if(petY<100){petY=100;petVY=Math.abs(petVY)}
+  if(petY>h-60){petY=h-60;petVY=-Math.abs(petVY)}
+  if(Math.abs(petVX)>0.1)petDir=petVX>0?1:-1;
+  petEl.style.left=petX+'px';
+  petEl.style.top=petY+'px';
+  petEl.style.transform=`scaleX(${petDir})`;
+  petFrame++;
+  if(petFrame%20===0){
+    if(Math.abs(petVX)>0.3||Math.abs(petVY)>0.3){
+      petFace.textContent=walks[petFrame%60===0?Math.floor(Math.random()*walks.length):0];
+    }else{
+      petFace.textContent=faces[Math.floor(Math.random()*faces.length)];
+    }
+  }
+  if(petFrame%80===0&&pawCount<12){
+    const paw=document.createElement('div');
+    paw.className='paw';paw.textContent='🐾';paw.style.left=(petX+12)+'px';paw.style.top=(petY+30)+'px';
+    document.body.appendChild(paw);
+    setTimeout(()=>paw.style.opacity='0',100);
+    setTimeout(()=>paw.remove(),2200);
+    pawCount++;
+  }
+  if(Math.random()<0.008){petVX=(Math.random()-.5)*3;petVY=(Math.random()-.5)*2}
+  requestAnimationFrame(updatePet);
+}
+
+function petClick(){
+  petVX=0;petVY=0;petFace.textContent='😻';
+  const msg=speeches[Math.floor(Math.random()*speeches.length)];
+  petSpeech.textContent=msg;petSpeech.classList.add('show');
+  setTimeout(()=>petSpeech.classList.remove('show'),2000);
+  setTimeout(()=>{petVX=(Math.random()-.5)*3;petVY=(Math.random()-.5)*2},1500);
+}
+
 // ===== Weather =====
 async function fetchWeather(){
   try{
@@ -635,6 +693,7 @@ async function init(){
   renderMatches();renderTodos();
   getMyId();renderEmojiBar();renderWall();
   renderJoke();
+  updatePet();
   
   if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
   updateCopyBtn();
