@@ -1024,6 +1024,7 @@ async function init(){
   updateCountdown();setInterval(updateCountdown,1000);
   updateProgress();setInterval(updateProgress,1000);
   fetchWeather();setInterval(fetchWeather,600000);
+  setTimeout(()=>speakTip(),2000);
   applyTimeBg();setInterval(applyTimeBg,300000);
   renderMatches();renderTodos();
   getMyId();renderEmojiBar();renderWall();
