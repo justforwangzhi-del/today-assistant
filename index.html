@@ -218,6 +218,7 @@ body{font-family:-apple-system,sans-serif;min-height:100vh;min-height:100dvh;pad
       <div><div class="weather-temp" id="w-temp">--<span>°C</span></div></div>
       <div style="flex:1"><div class="weather-desc" id="w-desc">加载中...</div><div class="weather-detail" id="w-detail"></div><div class="weather-loc" id="w-loc">📍 定位中...</div></div>
     </div>
+    <div id="w-tip" style="margin-top:8px;padding:6px 10px;background:rgba(255,200,50,.08);border:1px solid rgba(255,200,50,.15);border-radius:8px;font-size:10px;color:#fbbf24;line-height:1.5"></div>
   </div>
 
   <div class="grid">
@@ -683,7 +684,44 @@ async function fetchWeather(){
     else if(h>=20||h<6)wtype='night';
     
     if(wtype!==currentWeather){currentWeather=wtype;applyWeatherFx(wtype)}
+    
+    const tips=getWeatherTip(code,parseInt(c.temp_C),parseInt(c.FeelsLikeC),parseInt(c.humidity),h);
+    document.getElementById('w-tip').innerHTML=tips;
   }catch(e){applyWeatherFx('clear')}
+}
+
+function getWeatherTip(code,temp, feels, hum, hour){
+  const tips=[];
+  
+  // Temperature tips
+  if(temp>=35)tips.push('🥵 高温预警！尽量避免户外活动，多喝水防中暑');
+  else if(temp>=30)tips.push('☀️ 天气炎热，注意防晒补水');
+  else if(temp>=25)tips.push('😊 温度舒适，适合户外活动');
+  else if(temp>=15)tips.push('🍂 微凉天气，适合散步');
+  else if(temp>=5)tips.push('🧣 天气较冷，注意添衣保暖');
+  else if(temp>=0)tips.push('❄️ 寒冷天气，出门记得穿厚外套');
+  else tips.push('🥶 严寒天气，尽量减少外出，注意防冻');
+  
+  // Weather type tips
+  if(code>=200&&code<300)tips.push('⛈️ 雷暴天气，远离空旷地带，注意安全');
+  else if(code>=300&&code<500)tips.push('🌧️ 小雨绵绵，记得带伞出门');
+  else if(code>=500&&code<600)tips.push('🌂 大雨来袭，出行注意安全，小心路滑');
+  else if(code>=600&&code<700)tips.push('⛄ 下雪天路滑，出门注意防滑');
+  else if(code>=700&&code<800)tips.push('🌫️ 能见度低，开车注意减速慢行');
+  else if(code===800)tips.push('😎 阳光明媚，适合晒太阳补钙');
+  
+  // Humidity tips
+  if(hum>=80)tips.push('💧 湿度较高，衣服不容易干');
+  else if(hum<=30)tips.push('🏜️ 空气干燥，记得多喝水、涂保湿');
+  
+  // Time-based tips
+  const meals=['早餐','午餐','晚餐'];
+  if(hour>=6&&hour<9)tips.push(`🌅 早安！记得吃${meals[0]}哦`);
+  else if(hour>=11&&hour<13)tips.push(`🍱 午饭时间到，好好犒劳自己`);
+  else if(hour>=17&&hour<19)tips.push(`🌇 下班啦，回家吃${meals[2]}~`);
+  else if(hour>=22||hour<6)tips.push('🌙 夜深了，早点休息，晚安');
+  
+  return tips.join('<br>')||'✨ 今天也是美好的一天！';
 }
 
 function applyWeatherFx(type){
