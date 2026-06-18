@@ -215,6 +215,24 @@ body::before{content:'';position:fixed;inset:0;background:linear-gradient(135deg
     <div class="countdown-bar"><div class="countdown-fill" id="cd-bar" style="width:0%"></div></div>
   </div>
 
+  <div class="card fade" style="animation-delay:.08s" id="progress-card" style="padding:12px 14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-size:11px;font-weight:700">📅 今日进度</div>
+      <div style="font-size:10px;color:var(--text-muted)" id="p-time"></div>
+    </div>
+    <div style="position:relative;height:20px;background:rgba(255,255,255,.06);border-radius:10px;overflow:hidden" id="p-track">
+      <div style="position:absolute;height:100%;background:linear-gradient(90deg,#6366f1,#ec4899);border-radius:10px;transition:width 1s linear" id="p-fill"></div>
+      <div style="position:absolute;height:100%;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:8px;font-weight:700;color:#fff;text-shadow:0 0 4px rgba(0,0,0,.5);transition:all 1s linear" id="p-pct"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:8px;color:var(--text-muted)">
+      <span>🌅 6:00</span>
+      <span>☀️ 12:00</span>
+      <span>🌇 18:00</span>
+      <span>🌙 24:00</span>
+    </div>
+    <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap" id="p-segments"></div>
+  </div>
+
   <div class="card fade" style="animation-delay:.1s">
     <div class="weather-row">
       <div class="weather-icon" id="w-icon">🌤️</div>
@@ -544,6 +562,35 @@ function updateCountdown(){
     document.getElementById('cd-sub').textContent=`今日已工作 ${Math.floor((cur-start)/60)}小时${(cur-start)%60}分钟`;
     document.getElementById('cd-bar').style.width=Math.min(100,Math.max(0,((cur-start)/(end-start))*100))+'%';
   }
+}
+
+// ===== Daily Progress =====
+const pSegments=[
+  {from:0,to:6,label:'😴 睡眠',color:'#6366f1'},
+  {from:6,to:8,label:'🌅 早起',color:'#f59e0b'},
+  {from:8,to:12,label:'💼 上午',color:'#10b981'},
+  {from:12,to:14,label:'🍱 午休',color:'#ec4899'},
+  {from:14,to:18,label:'📝 下午',color:'#06b6d4'},
+  {from:18,to:20,label:'🌆 傍晚',color:'#f97316'},
+  {from:20,to:22,label:'🎮 晚间',color:'#8b5cf6'},
+  {from:22,to:24,label:'🌙 夜深',color:'#475569'},
+];
+
+function updateProgress(){
+  const now=new Date();
+  const h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
+  const totalMin=h*60+m;
+  const pct=Math.min(100,(totalMin/1440)*100);
+  
+  document.getElementById('p-time').textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} · 已过${Math.floor(pct)}%`;
+  document.getElementById('p-fill').style.width=pct+'%';
+  document.getElementById('p-pct').textContent=Math.floor(pct)+'%';
+  document.getElementById('p-pct').style.left=`calc(${pct}% - 30px)`;
+  
+  document.getElementById('p-segments').innerHTML=pSegments.map(seg=>{
+    const active=totalMin>=seg.from*60&&totalMin<seg.to*60;
+    return`<span style="display:inline-flex;align-items:center;gap:2px;padding:2px 6px;border-radius:6px;font-size:8px;font-weight:600;background:${active?seg.color+'22':'rgba(255,255,255,.04)'};color:${active?seg.color:'var(--text-muted)'};border:1px solid ${active?seg.color+'44':'transparent'}">${seg.label}</span>`;
+  }).join('');
 }
 
 // ===== Music Player =====
@@ -913,6 +960,7 @@ async function init(){
   // Render
   updateClock();setInterval(updateClock,1000);
   updateCountdown();setInterval(updateCountdown,1000);
+  updateProgress();setInterval(updateProgress,1000);
   fetchWeather();setInterval(fetchWeather,600000);
   applyTimeBg();setInterval(applyTimeBg,300000);
   renderMatches();renderTodos();
