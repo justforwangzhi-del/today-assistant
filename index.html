@@ -96,7 +96,8 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
 .match-teams{display:flex;align-items:center;justify-content:space-between}
 .team{display:flex;align-items:center;gap:6px}
 .team.r{flex-direction:row-reverse}
-.team-logo{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;border:1px solid rgba(255,255,255,.1)}
+.team-logo{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;border:1px solid rgba(255,255,255,.1);overflow:hidden;flex-shrink:0}
+.team-logo img{width:100%;height:100%;object-fit:cover}
 .team-name{font-size:11px;font-weight:600}
 .match-vs{font-size:9px;font-weight:800;color:var(--text-muted)}
 .match-time{text-align:center;margin-top:6px}
@@ -961,6 +962,17 @@ function applyTimeBg(){
 
 // ===== Matches =====
 const today=new Date().toISOString().split('T')[0];
+const teamLogos={
+  'TES':'https://img.alicdn.com/imgextra/i1/2206686758/O1CN01QfVpUw1CqSf8lXpJh_!!2206686758.png',
+  'BLG':'https://img.alicdn.com/imgextra/i3/2206686758/O1CN01t8xYnG1CqSf8lXpJh_!!2206686758.png',
+  'T1':'https://img.alicdn.com/imgextra/i1/2206686758/O1CN01rTZfXN1CqSf8lXpJh_!!2206686758.png',
+  'GEN':'https://img.alicdn.com/imgextra/i3/2206686758/O1CN01yC9n8D1CqSf8lXpJh_!!2206686758.png',
+  'JDG':'https://img.alicdn.com/imgextra/i1/2206686758/O1CN01kX8xYn1CqSf8lXpJh_!!2206686758.png',
+  'WBG':'https://img.alicdn.com/imgextra/i3/2206686758/O1CN01bG7xYn1CqSf8lXpJh_!!2206686758.png',
+  'KT':'https://img.alicdn.com/imgextra/i1/2206686758/O1CN01vT8xYn1CqSf8lXpJh_!!2206686758.png',
+  'HLE':'https://img.alicdn.com/imgextra/i3/2206686758/O1CN01wC9n8D1CqSf8lXpJh_!!2206686758.png',
+};
+
 const matches=[
   {l:'LPL',t:'16:00',t1:'TES',n1:'Top Esports',t2:'BLG',n2:'Bilibili Gaming'},
   {l:'LCK',t:'17:00',t1:'T1',n1:'T1',t2:'GEN',n2:'Gen.G'},
@@ -973,7 +985,9 @@ function renderMatches(){
   document.getElementById('match-list').innerHTML=matches.map(x=>{
     const mh=parseInt(x.t.split(':')[0]);
     const live=h===mh;
-    return`<div class="match"><div class="match-league">${x.l}</div><div class="match-teams"><div class="team"><div class="team-logo">${x.t1}</div><div class="team-name">${x.n1}</div></div><div class="match-vs">VS</div><div class="team r"><div class="team-logo">${x.t2}</div><div class="team-name">${x.n2}</div></div></div><div class="match-time"><span>${live?'LIVE':x.t}</span></div>${live?'<div class="match-status live">🔴 直播中</div>':''}</div>`;
+    const logo1=teamLogos[x.t1];
+    const logo2=teamLogos[x.t2];
+    return`<div class="match"><div class="match-league">${x.l}</div><div class="match-teams"><div class="team"><div class="team-logo">${logo1?`<img src="${logo1}" alt="${x.t1}" onerror="this.parentElement.textContent='${x.t1}'">`:x.t1}</div><div class="team-name">${x.n1}</div></div><div class="match-vs">VS</div><div class="team r"><div class="team-logo">${logo2?`<img src="${logo2}" alt="${x.t2}" onerror="this.parentElement.textContent='${x.t2}'">`:x.t2}</div><div class="team-name">${x.n2}</div></div></div><div class="match-time"><span>${live?'LIVE':x.t}</span></div>${live?'<div class="match-status live">🔴 直播中</div>':''}</div>`;
   }).join('');
 }
 
