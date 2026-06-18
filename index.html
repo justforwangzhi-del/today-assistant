@@ -963,15 +963,25 @@ function applyTimeBg(){
 // ===== Matches =====
 const today=new Date().toISOString().split('T')[0];
 const teamLogos={
-  'TES':{url:'https://img.alicdn.com/imgextra/i1/2206686758/O1CN01QfVpUw1CqSf8lXpJh_!!2206686758.png',color:'#e4002b'},
-  'BLG':{url:'https://img.alicdn.com/imgextra/i3/2206686758/O1CN01t8xYnG1CqSf8lXpJh_!!2206686758.png',color:'#00a1d6'},
-  'T1':{url:'https://img.alicdn.com/imgextra/i1/2206686758/O1CN01rTZfXN1CqSf8lXpJh_!!2206686758.png',color:'#e4002b'},
-  'GEN':{url:'https://img.alicdn.com/imgextra/i3/2206686758/O1CN01yC9n8D1CqSf8lXpJh_!!2206686758.png',color:'#d4a843'},
-  'JDG':{url:'https://img.alicdn.com/imgextra/i1/2206686758/O1CN01kX8xYn1CqSf8lXpJh_!!2206686758.png',color:'#c41230'},
-  'WBG':{url:'https://img.alicdn.com/imgextra/i3/2206686758/O1CN01bG7xYn1CqSf8lXpJh_!!2206686758.png',color:'#ff6b00'},
-  'KT':{url:'https://img.alicdn.com/imgextra/i1/2206686758/O1CN01vT8xYn1CqSf8lXpJh_!!2206686758.png',color:'#000000'},
-  'HLE':{url:'https://img.alicdn.com/imgextra/i3/2206686758/O1CN01wC9n8D1CqSf8lXpJh_!!2206686758.png',color:'#ff4500'},
+  'TES':{color:'#e4002b',text:'TES'},
+  'BLG':{color:'#00a1d6',text:'BLG'},
+  'T1':{color:'#e4002b',text:'T1'},
+  'GEN':{color:'#d4a843',text:'GEN'},
+  'JDG':{color:'#c41230',text:'JDG'},
+  'WBG':{color:'#ff6b00',text:'WBG'},
+  'KT':{color:'#000000',text:'KT'},
+  'HLE':{color:'#ff4500',text:'HLE'},
 };
+
+function getTeamLogo(code){
+  const t=teamLogos[code];
+  if(!t)return code;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+    <circle cx="16" cy="16" r="16" fill="${t.color}"/>
+    <text x="16" y="16" text-anchor="middle" dominant-baseline="central" fill="#fff" font-size="${code.length>2?7:9}" font-weight="bold" font-family="sans-serif">${t.text}</text>
+  </svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
 
 const matches=[
   {l:'LPL',t:'16:00',t1:'TES',n1:'Top Esports',t2:'BLG',n2:'Bilibili Gaming'},
@@ -985,9 +995,7 @@ function renderMatches(){
   document.getElementById('match-list').innerHTML=matches.map(x=>{
     const mh=parseInt(x.t.split(':')[0]);
     const live=h===mh;
-    const t1=teamLogos[x.t1]||{color:'#666'};
-    const t2=teamLogos[x.t2]||{color:'#666'};
-    return`<div class="match"><div class="match-league">${x.l}</div><div class="match-teams"><div class="team"><div class="team-logo">${t1.url?`<img src="${t1.url}" alt="${x.t1}" onerror="this.style.display='none';this.parentElement.innerHTML='<span style=\\'color:${t1.color};font-size:10px\\'>${x.t1}</span>'">`:x.t1}</div><div class="team-name">${x.n1}</div></div><div class="match-vs">VS</div><div class="team r"><div class="team-logo">${t2.url?`<img src="${t2.url}" alt="${x.t2}" onerror="this.style.display='none';this.parentElement.innerHTML='<span style=\\'color:${t2.color};font-size:10px\\'>${x.t2}</span>'">`:x.t2}</div><div class="team-name">${x.n2}</div></div></div><div class="match-time"><span>${live?'LIVE':x.t}</span></div>${live?'<div class="match-status live">🔴 直播中</div>':''}</div>`;
+    return`<div class="match"><div class="match-league">${x.l}</div><div class="match-teams"><div class="team"><div class="team-logo"><img src="${getTeamLogo(x.t1)}" alt="${x.t1}"></div><div class="team-name">${x.n1}</div></div><div class="match-vs">VS</div><div class="team r"><div class="team-logo"><img src="${getTeamLogo(x.t2)}" alt="${x.t2}"></div><div class="team-name">${x.n2}</div></div></div><div class="match-time"><span>${live?'LIVE':x.t}</span></div>${live?'<div class="match-status live">🔴 直播中</div>':''}</div>`;
   }).join('');
 }
 
