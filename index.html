@@ -13,7 +13,7 @@
 <title>今日助手</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--primary:#6366f1;--secondary:#ec4899;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--text:#f8fafc;--text-muted:#94a3b8;--card:rgba(255,255,255,.08);--border:rgba(255,255,255,.1);--radius:16px;--radius-sm:10px;--safe-top:env(safe-area-inset-top,env(titlebar-area-inset-top,20px));--safe-bottom:env(safe-area-inset-bottom,env(titlebar-area-inset-bottom,0px));--safe-left:env(safe-area-inset-left,env(titlebar-area-inset-left,0px));--safe-right:env(safe-area-inset-right,env(titlebar-area-inset-right,0px));--titlebar-h:env(titlebar-area-height,0px)}
+:root{--primary:#6366f1;--secondary:#ec4899;--success:#10b981;--warning:#f59e0b;--danger:#ef4444;--text:#f8fafc;--text-muted:#94a3b8;--card:rgba(255,255,255,.08);--border:rgba(255,255,255,.1);--radius:16px;--radius-sm:10px;--safe-top:env(safe-area-inset-top,0px);--safe-bottom:env(safe-area-inset-bottom,0px);--safe-left:env(safe-area-inset-left,0px);--safe-right:env(safe-area-inset-right,0px)}
 html,body{margin:0;padding:0;width:100%;height:100%;overflow-x:hidden}
 html{scroll-behavior:smooth}
 body{font-family:-apple-system,sans-serif;color:var(--text);background:#0f172a;-webkit-tap-highlight-color:transparent}
@@ -23,7 +23,7 @@ body::before{content:'';position:fixed;inset:0;background:linear-gradient(135deg
 .bg-orb:nth-child(1){width:400px;height:400px;background:#6366f1;top:-150px;left:-150px}
 .bg-orb:nth-child(2){width:350px;height:350px;background:#ec4899;bottom:-100px;right:-100px;animation-delay:-7s}
 @keyframes orbFloat{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-30px)}}
-.container{max-width:100%;position:relative;z-index:1;padding:12px 12px calc(12px + var(--safe-bottom)) 12px}
+.container{max-width:100%;position:relative;z-index:1;padding:12px 12px 20px 12px}
 
 /* Weather Effects */
 .weather-fx{position:fixed;inset:0;pointer-events:none;z-index:-1;overflow:hidden;transition:background 2s}
@@ -46,7 +46,7 @@ body::before{content:'';position:fixed;inset:0;background:linear-gradient(135deg
 @keyframes mistDrift{0%{transform:translateX(-3%)}100%{transform:translateX(3%)}}
 
 /* Header */
-.header{display:flex;justify-content:space-between;align-items:center;padding:calc(var(--safe-top) + 8px) 0 12px}
+.header{display:flex;justify-content:space-between;align-items:center;padding:20px 0 12px}
 .header h1{font-size:20px;font-weight:800;background:linear-gradient(135deg,#f8fafc,#94a3b8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .header-time{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;background:linear-gradient(135deg,#f8fafc,#cbd5e1);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .header-date{font-size:11px;color:var(--text-muted);text-align:right}
@@ -307,32 +307,12 @@ body::before{content:'';position:fixed;inset:0;background:linear-gradient(135deg
 </div>
 
 <script>
-// ===== Immersive Mode (Android) =====
-(function(){
-  const isAndroid=/Android/.test(navigator.userAgent);
-  const isEdge=/Edg\//.test(navigator.userAgent);
-  
-  if('windowControlsOverlay' in navigator){
-    navigator.windowControlsOverlay.addEventListener('geometrychange',e=>{
-      const ta=e.titlebarArea;
-      document.documentElement.style.setProperty('--safe-top',ta.height+'px');
-      document.documentElement.style.setProperty('--safe-left',ta.left+'px');
-      document.documentElement.style.setProperty('--safe-right',window.innerWidth-ta.right+'px');
-    });
+// ===== Immersive Mode =====
+document.addEventListener('DOMContentLoaded',()=>{
+  if(document.fullscreenElement||document.webkitFullscreenElement){
+    document.body.style.paddingTop='0';
   }
-  
-  if(isAndroid){
-    document.documentElement.style.setProperty('--safe-bottom','0px');
-    document.body.style.paddingBottom='0';
-  }
-  
-  if(isEdge&&isAndroid){
-    document.querySelector('meta[name="theme-color"]').setAttribute('content','#0f172a');
-    const style=document.createElement('style');
-    style.textContent='@media all and (display-mode:standalone){body{padding-top:0!important;padding-bottom:0!important}.container{padding-top:8px!important}}';
-    document.head.appendChild(style);
-  }
-})();
+});
 
 // ===== Config =====
 const GITHUB_TOKEN_KEY='gh_token';
