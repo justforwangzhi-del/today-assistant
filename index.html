@@ -834,12 +834,17 @@ function speakTip(){
     window.speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(text);
     u.lang='zh-CN';u.rate=0.9;u.pitch=1;
-    u.onstart=()=>{document.querySelector('#w-tip button').textContent='🔊 播放中...'};
-    u.onend=()=>{document.querySelector('#w-tip button').textContent='🔊 语音播报'};
+    const btn=document.querySelector('#w-tip button');
+    u.onstart=()=>{btn.textContent='🔊 播放中...'};
+    u.onend=()=>{btn.textContent='🔊 语音播报'};
+    u.onerror=()=>{btn.textContent='⚠️ 播放失败';setTimeout(()=>{btn.textContent='🔊 语音播报'},2000)};
     window.speechSynthesis.speak(u);
+    // Chrome bug: resume after a short delay
+    setTimeout(()=>{if(window.speechSynthesis.paused)window.speechSynthesis.resume()},100);
   }else{
-    document.querySelector('#w-tip button').textContent='⚠️ 浏览器不支持';
-    setTimeout(()=>{document.querySelector('#w-tip button').textContent='🔊 语音播报'},2000);
+    const btn=document.querySelector('#w-tip button');
+    btn.textContent='⚠️ 浏览器不支持';
+    setTimeout(()=>{btn.textContent='🔊 语音播报'},2000);
   }
 }
 
@@ -1024,7 +1029,18 @@ async function init(){
   updateCountdown();setInterval(updateCountdown,1000);
   updateProgress();setInterval(updateProgress,1000);
   fetchWeather();setInterval(fetchWeather,600000);
-  setTimeout(()=>speakTip(),2000);
+  document.addEventListener('click',function autoSpeak(){
+    if(window._tipSpeakText){
+      setTimeout(()=>speakTip(),300);
+      document.removeEventListener('click',autoSpeak);
+    }
+  },{once:true});
+  document.addEventListener('touchstart',function autoSpeak2(){
+    if(window._tipSpeakText){
+      setTimeout(()=>speakTip(),300);
+      document.removeEventListener('touchstart',autoSpeak2);
+    }
+  },{once:true});
   applyTimeBg();setInterval(applyTimeBg,300000);
   renderMatches();renderTodos();
   getMyId();renderEmojiBar();renderWall();
