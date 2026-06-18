@@ -6,7 +6,7 @@
   "scope": "https://justforwangzhi-del.github.io/today-assistant/",
   "display": "standalone",
   "background_color": "#0f172a",
-  "theme_color": "#6366f1",
+  "theme_color": "#0f172a",
   "orientation": "portrait",
   "icons": [
     {
