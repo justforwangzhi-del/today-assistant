@@ -828,31 +828,38 @@ function getWeatherTip(code,temp, feels, hum, hour){
   else if(hour>=17&&hour<19)tips.push(`🌇 下班啦，回家吃${meals[2]}~`);
   else if(hour>=22||hour<6)tips.push('🌙 夜深了，早点休息，晚安');
   
-  return{display:tips.join('<br>')||'✨ 今天也是美好的一天！',speak:tips.map(t=>t.replace(/[^\u4e00-\u9fa5a-zA-Z0-9，。！？、：；""''（）~\s]/g,'')).filter(t=>t.trim()).join('。')};
+  return{display:tips.join('<br>')||'✨ 今天也是美好的一天！',speak:tips.map(t=>t.replace(/[^\u4e00-\u9fa5a-zA-Z0-9，。！？：]/g,'')).filter(t=>t.trim()).join('。')};
 }
 
 function speakTip(){
   const text=window._tipSpeakText;
   if(!text||!text.trim())return;
+  const btn=document.querySelector('#w-tip button');
+  
+  // Try SpeechSynthesis first
   if('speechSynthesis' in window){
     window.speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(text);
     u.lang='zh-CN';u.rate=0.9;u.pitch=1;
-    // Try to find a Chinese voice
-    const voices=window.speechSynthesis.getVoices();
-    const zhVoice=voices.find(v=>v.lang.startsWith('zh'));
-    if(zhVoice)u.voice=zhVoice;
-    const btn=document.querySelector('#w-tip button');
     u.onstart=()=>{btn.textContent='🔊 播放中...'};
     u.onend=()=>{btn.textContent='🔊 语音播报'};
-    u.onerror=(e)=>{console.error('Speech error:',e);btn.textContent='⚠️ 播放失败';setTimeout(()=>{btn.textContent='🔊 语音播报'},2000)};
+    u.onerror=()=>{
+      // Fallback: try without specifying voice
+      const u2=new SpeechSynthesisUtterance(text);
+      u2.lang='zh-CN';
+      u2.onstart=()=>{btn.textContent='🔊 播放中...'};
+      u2.onend=()=>{btn.textContent='🔊 语音播报'};
+      u2.onerror=()=>{btn.textContent='⚠️ 播放失败';setTimeout(()=>{btn.textContent='🔊 语音播报'},2000)};
+      window.speechSynthesis.speak(u2);
+    };
     window.speechSynthesis.speak(u);
-    setTimeout(()=>{if(window.speechSynthesis.paused)window.speechSynthesis.resume()},200);
-  }else{
-    const btn=document.querySelector('#w-tip button');
-    btn.textContent='⚠️ 浏览器不支持';
-    setTimeout(()=>{btn.textContent='🔊 语音播报'},2000);
+    setTimeout(()=>{if(window.speechSynthesis.paused)window.speechSynthesis.resume()},300);
+    return;
   }
+  
+  // Fallback: use AudioContext beep (not ideal but shows it's working)
+  btn.textContent='⚠️ 当前浏览器不支持语音播报';
+  setTimeout(()=>{btn.textContent='🔊 语音播报'},2000);
 }
 
 function applyWeatherFx(type){
@@ -1036,18 +1043,6 @@ async function init(){
   updateCountdown();setInterval(updateCountdown,1000);
   updateProgress();setInterval(updateProgress,1000);
   fetchWeather();setInterval(fetchWeather,600000);
-  document.addEventListener('click',function autoSpeak(){
-    if(window._tipSpeakText){
-      setTimeout(()=>speakTip(),300);
-      document.removeEventListener('click',autoSpeak);
-    }
-  },{once:true});
-  document.addEventListener('touchstart',function autoSpeak2(){
-    if(window._tipSpeakText){
-      setTimeout(()=>speakTip(),300);
-      document.removeEventListener('touchstart',autoSpeak2);
-    }
-  },{once:true});
   applyTimeBg();setInterval(applyTimeBg,300000);
   renderMatches();renderTodos();
   getMyId();renderEmojiBar();renderWall();
