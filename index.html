@@ -258,7 +258,7 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
     <div id="w-tip" style="display:none;margin-top:8px;padding:6px 10px;background:rgba(255,200,50,.08);border:1px solid rgba(255,200,50,.15);border-radius:8px;font-size:10px;color:#fbbf24;line-height:1.5">
       <div id="w-tip-text"></div>
       <div style="margin-top:4px;text-align:right">
-        <button onclick="speakTip()" style="background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.2);color:#fbbf24;padding:3px 8px;border-radius:6px;font-size:9px;cursor:pointer">🔊 复制播报</button>
+        <button onclick="speakTip()" style="background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.2);color:#fbbf24;padding:3px 8px;border-radius:6px;font-size:9px;cursor:pointer">🔊 语音播报</button>
       </div>
     </div>
   </div>
@@ -834,11 +834,19 @@ function getWeatherTip(code,temp, feels, hum, hour){
 }
 
 function speakTip(){
-  const text=window._tipSpeakText||'今天也是美好的一天';
-  const btn=document.querySelector('#w-tip button');
-  btn.textContent='✅ 已复制';
-  if(navigator.clipboard){navigator.clipboard.writeText(text).catch(()=>{})}
-  setTimeout(()=>{btn.textContent='🔊 复制播报'},1500);
+  const text=window._tipSpeakText;
+  if(!text)return;
+  if('speechSynthesis' in window){
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang='zh-CN';u.rate=0.9;u.pitch=1;
+    u.onstart=()=>{document.querySelector('#w-tip button').textContent='🔊 播放中...'};
+    u.onend=()=>{document.querySelector('#w-tip button').textContent='🔊 语音播报'};
+    window.speechSynthesis.speak(u);
+  }else{
+    document.querySelector('#w-tip button').textContent='⚠️ 浏览器不支持';
+    setTimeout(()=>{document.querySelector('#w-tip button').textContent='🔊 语音播报'},2000);
+  }
 }
 
 function applyWeatherFx(type){
