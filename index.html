@@ -836,16 +836,36 @@ function getWeatherTip(code,temp, feels, hum, hour){
 function speakTip(){
   const text=window._tipSpeakText;
   if(!text)return;
+  const btn=document.querySelector('#w-tip button');
+  btn.textContent='🔊 加载中...';
+  
+  // Method 1: Try SpeechSynthesis
   if('speechSynthesis' in window){
     window.speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(text);
-    u.lang='zh-CN';u.rate=0.9;u.pitch=1;
-    u.onstart=()=>{document.querySelector('#w-tip button').textContent='🔊 播放中...'};
-    u.onend=()=>{document.querySelector('#w-tip button').textContent='🔊 语音播报'};
+    u.lang='zh-CN';u.rate=0.9;
+    u.onstart=()=>{btn.textContent='🔊 播放中...'};
+    u.onend=()=>{btn.textContent='🔊 语音播报'};
+    u.onerror=()=>{ttsFallback(text,btn)};
     window.speechSynthesis.speak(u);
-  }else{
-    document.querySelector('#w-tip button').textContent='⚠️ 浏览器不支持';
-    setTimeout(()=>{document.querySelector('#w-tip button').textContent='🔊 语音播报'},2000);
+    setTimeout(()=>{if(window.speechSynthesis.speaking){btn.textContent='🔊 播放中...'}else{ttsFallback(text,btn)}},500);
+    return;
+  }
+  ttsFallback(text,btn);
+}
+
+function ttsFallback(text,btn){
+  // Method 2: Use free TTS API
+  try{
+    const url=`https://api.tts.baidu.com/text2audio?tex=${encodeURIComponent(text)}&cuid=TodayAssistant&lan=zh&ctp=1&pdt=301&spd=5&per=0`;
+    const a=new Audio(url);
+    a.onplay=()=>{btn.textContent='🔊 播放中...'};
+    a.onended=()=>{btn.textContent='🔊 语音播报'};
+    a.onerror=()=>{btn.textContent='⚠️ 播放失败';setTimeout(()=>{btn.textContent='🔊 语音播报'},2000)};
+    a.play();
+  }catch(e){
+    btn.textContent='⚠️ 播放失败';
+    setTimeout(()=>{btn.textContent='🔊 语音播报'},2000);
   }
 }
 
