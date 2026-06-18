@@ -837,32 +837,50 @@ function speakTip(){
   const text=window._tipSpeakText;
   if(!text)return;
   const btn=document.querySelector('#w-tip button');
-  btn.textContent='🔊 播放中...';
   
-  // Method 1: SpeechSynthesis with explicit resume
-  if('speechSynthesis' in window){
-    try{
-      window.speechSynthesis.cancel();
-      const u=new SpeechSynthesisUtterance(text);
-      u.lang='zh-CN';u.rate=0.85;u.volume=1;
-      u.onend=()=>{btn.textContent='🔊 语音播报'};
-      u.onerror=()=>{btn.textContent='🔊 语音播报'};
-      window.speechSynthesis.speak(u);
-      // Chrome/Edge bug workaround
-      const resumeInterval=setInterval(()=>{
-        if(window.speechSynthesis.speaking){
-          clearInterval(resumeInterval);
-          if(window.speechSynthesis.paused)window.speechSynthesis.resume();
-        }
-      },100);
-      setTimeout(()=>clearInterval(resumeInterval),3000);
-      return;
-    }catch(e){}
+  if(!('speechSynthesis' in window)){
+    btn.textContent='⚠️ 浏览器不支持';
+    setTimeout(()=>{btn.textContent='🔊 语音播报'},2000);
+    return;
   }
   
-  // Method 2: Use Web Audio API to generate speech-like tones
-  btn.textContent='⚠️ 当前浏览器不支持语音播报';
-  setTimeout(()=>{btn.textContent='🔊 语音播报'},2000);
+  // Check available voices
+  const voices=window.speechSynthesis.getVoices();
+  const zhVoice=voices.find(v=>v.lang.includes('zh'));
+  
+  if(!zhVoice&&voices.length>0){
+    btn.textContent='⚠️ 无中文语音，请安装TTS引擎';
+    setTimeout(()=>{btn.textContent='🔊 语音播报'},3000);
+    return;
+  }
+  
+  btn.textContent='🔊 播放中...';
+  window.speechSynthesis.cancel();
+  
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang='zh-CN';
+  u.rate=0.85;
+  if(zhVoice)u.voice=zhVoice;
+  
+  u.onend=()=>{btn.textContent='🔊 语音播报'};
+  u.onerror=(e)=>{console.error('TTS error:',e);btn.textContent='⚠️ 播放失败';setTimeout(()=>{btn.textContent='🔊 语音播报'},2000)};
+  
+  window.speechSynthesis.speak(u);
+  
+  // Workaround for Chrome/Edge bug
+  const resumeTimer=setInterval(()=>{
+    if(window.speechSynthesis.speaking){
+      clearInterval(resumeTimer);
+      if(window.speechSynthesis.paused)window.speechSynthesis.resume();
+    }
+  },150);
+  setTimeout(()=>clearInterval(resumeTimer),2000);
+}
+
+// Preload voices
+if('speechSynthesis' in window){
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged=()=>window.speechSynthesis.getVoices();
 }
 
 function applyWeatherFx(type){
