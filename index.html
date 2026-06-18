@@ -963,14 +963,14 @@ function applyTimeBg(){
 // ===== Matches =====
 const today=new Date().toISOString().split('T')[0];
 const teamLogos={
-  'TES':'https://img.alicdn.com/imgextra/i1/2206686758/O1CN01QfVpUw1CqSf8lXpJh_!!2206686758.png',
-  'BLG':'https://img.alicdn.com/imgextra/i3/2206686758/O1CN01t8xYnG1CqSf8lXpJh_!!2206686758.png',
-  'T1':'https://img.alicdn.com/imgextra/i1/2206686758/O1CN01rTZfXN1CqSf8lXpJh_!!2206686758.png',
-  'GEN':'https://img.alicdn.com/imgextra/i3/2206686758/O1CN01yC9n8D1CqSf8lXpJh_!!2206686758.png',
-  'JDG':'https://img.alicdn.com/imgextra/i1/2206686758/O1CN01kX8xYn1CqSf8lXpJh_!!2206686758.png',
-  'WBG':'https://img.alicdn.com/imgextra/i3/2206686758/O1CN01bG7xYn1CqSf8lXpJh_!!2206686758.png',
-  'KT':'https://img.alicdn.com/imgextra/i1/2206686758/O1CN01vT8xYn1CqSf8lXpJh_!!2206686758.png',
-  'HLE':'https://img.alicdn.com/imgextra/i3/2206686758/O1CN01wC9n8D1CqSf8lXpJh_!!2206686758.png',
+  'TES':{url:'https://img.alicdn.com/imgextra/i1/2206686758/O1CN01QfVpUw1CqSf8lXpJh_!!2206686758.png',color:'#e4002b'},
+  'BLG':{url:'https://img.alicdn.com/imgextra/i3/2206686758/O1CN01t8xYnG1CqSf8lXpJh_!!2206686758.png',color:'#00a1d6'},
+  'T1':{url:'https://img.alicdn.com/imgextra/i1/2206686758/O1CN01rTZfXN1CqSf8lXpJh_!!2206686758.png',color:'#e4002b'},
+  'GEN':{url:'https://img.alicdn.com/imgextra/i3/2206686758/O1CN01yC9n8D1CqSf8lXpJh_!!2206686758.png',color:'#d4a843'},
+  'JDG':{url:'https://img.alicdn.com/imgextra/i1/2206686758/O1CN01kX8xYn1CqSf8lXpJh_!!2206686758.png',color:'#c41230'},
+  'WBG':{url:'https://img.alicdn.com/imgextra/i3/2206686758/O1CN01bG7xYn1CqSf8lXpJh_!!2206686758.png',color:'#ff6b00'},
+  'KT':{url:'https://img.alicdn.com/imgextra/i1/2206686758/O1CN01vT8xYn1CqSf8lXpJh_!!2206686758.png',color:'#000000'},
+  'HLE':{url:'https://img.alicdn.com/imgextra/i3/2206686758/O1CN01wC9n8D1CqSf8lXpJh_!!2206686758.png',color:'#ff4500'},
 };
 
 const matches=[
@@ -985,9 +985,9 @@ function renderMatches(){
   document.getElementById('match-list').innerHTML=matches.map(x=>{
     const mh=parseInt(x.t.split(':')[0]);
     const live=h===mh;
-    const logo1=teamLogos[x.t1];
-    const logo2=teamLogos[x.t2];
-    return`<div class="match"><div class="match-league">${x.l}</div><div class="match-teams"><div class="team"><div class="team-logo">${logo1?`<img src="${logo1}" alt="${x.t1}" onerror="this.parentElement.textContent='${x.t1}'">`:x.t1}</div><div class="team-name">${x.n1}</div></div><div class="match-vs">VS</div><div class="team r"><div class="team-logo">${logo2?`<img src="${logo2}" alt="${x.t2}" onerror="this.parentElement.textContent='${x.t2}'">`:x.t2}</div><div class="team-name">${x.n2}</div></div></div><div class="match-time"><span>${live?'LIVE':x.t}</span></div>${live?'<div class="match-status live">🔴 直播中</div>':''}</div>`;
+    const t1=teamLogos[x.t1]||{color:'#666'};
+    const t2=teamLogos[x.t2]||{color:'#666'};
+    return`<div class="match"><div class="match-league">${x.l}</div><div class="match-teams"><div class="team"><div class="team-logo">${t1.url?`<img src="${t1.url}" alt="${x.t1}" onerror="this.style.display='none';this.parentElement.innerHTML='<span style=\\'color:${t1.color};font-size:10px\\'>${x.t1}</span>'">`:x.t1}</div><div class="team-name">${x.n1}</div></div><div class="match-vs">VS</div><div class="team r"><div class="team-logo">${t2.url?`<img src="${t2.url}" alt="${x.t2}" onerror="this.style.display='none';this.parentElement.innerHTML='<span style=\\'color:${t2.color};font-size:10px\\'>${x.t2}</span>'">`:x.t2}</div><div class="team-name">${x.n2}</div></div></div><div class="match-time"><span>${live?'LIVE':x.t}</span></div>${live?'<div class="match-status live">🔴 直播中</div>':''}</div>`;
   }).join('');
 }
 
