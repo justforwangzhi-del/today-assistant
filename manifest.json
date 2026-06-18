@@ -4,7 +4,7 @@
   "description": "你的每日智能助手 - 天气、赛事、待办",
   "start_url": "https://justforwangzhi-del.github.io/today-assistant/index.html",
   "scope": "https://justforwangzhi-del.github.io/today-assistant/",
-  "display": "fullscreen",
+  "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "orientation": "portrait",
