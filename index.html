@@ -308,18 +308,31 @@ body::before{content:'';position:fixed;inset:0;background:linear-gradient(135deg
 
 <script>
 // ===== Immersive Mode (Android) =====
-if('windowControlsOverlay' in navigator){
-  navigator.windowControlsOverlay.addEventListener('geometrychange',e=>{
-    const ta=e.titlebarArea;
-    document.documentElement.style.setProperty('--safe-top',ta.height+'px');
-    document.documentElement.style.setProperty('--safe-left',ta.left+'px');
-    document.documentElement.style.setProperty('--safe-right',window.innerWidth-ta.right+'px');
-  });
-}
-if(navigator.userAgent.includes('Android')){
-  document.documentElement.style.setProperty('--safe-bottom','0px');
-  document.body.style.paddingBottom='0';
-}
+(function(){
+  const isAndroid=/Android/.test(navigator.userAgent);
+  const isEdge=/Edg\//.test(navigator.userAgent);
+  
+  if('windowControlsOverlay' in navigator){
+    navigator.windowControlsOverlay.addEventListener('geometrychange',e=>{
+      const ta=e.titlebarArea;
+      document.documentElement.style.setProperty('--safe-top',ta.height+'px');
+      document.documentElement.style.setProperty('--safe-left',ta.left+'px');
+      document.documentElement.style.setProperty('--safe-right',window.innerWidth-ta.right+'px');
+    });
+  }
+  
+  if(isAndroid){
+    document.documentElement.style.setProperty('--safe-bottom','0px');
+    document.body.style.paddingBottom='0';
+  }
+  
+  if(isEdge&&isAndroid){
+    document.querySelector('meta[name="theme-color"]').setAttribute('content','#0f172a');
+    const style=document.createElement('style');
+    style.textContent='@media all and (display-mode:standalone){body{padding-top:0!important;padding-bottom:0!important}.container{padding-top:8px!important}}';
+    document.head.appendChild(style);
+  }
+})();
 
 // ===== Config =====
 const GITHUB_TOKEN_KEY='gh_token';
