@@ -550,12 +550,69 @@ const weekendMsgs=[
   {text:'游戏时间',sub:'今天可以尽情玩了',icon:'🎮'},
 ];
 
+// 中国节假日 (月-日)
+const holidays={
+  '01-01':{name:'元旦',greeting:'🎊 新年快乐！新的一年，万事如意！'},
+  '02-14':{name:'情人节',greeting:'💕 情人节快乐！愿你被爱包围~'},
+  '03-08':{name:'妇女节',greeting:'🌸 妇女节快乐！致敬每一位女性！'},
+  '04-01':{name:'愚人节',greeting:'🤡 愚人节快乐！小心被骗哦~'},
+  '05-01':{name:'劳动节',greeting:'💪 劳动节快乐！劳动最光荣！'},
+  '05-04':{name:'青年节',greeting:'🎉 青年节快乐！青春万岁！'},
+  '06-01':{name:'儿童节',greeting:'🎈 六一快乐！保持童心！'},
+  '07-01':{name:'建党节',greeting:'🇨🇳 建党节快乐！'},
+  '08-01':{name:'建军节',greeting:'🎖️ 建军节快乐！致敬军人！'},
+  '09-10':{name:'教师节',greeting:'📚 教师节快乐！感恩老师！'},
+  '10-01':{name:'国庆节',greeting:'🇨🇳 国庆节快乐！祝福祖国！'},
+  '10-02':{name:'国庆节',greeting:'🇨🇳 国庆假期愉快！'},
+  '10-03':{name:'国庆节',greeting:'🇨🇳 国庆假期愉快！'},
+  '10-04':{name:'国庆节',greeting:'🇨🇳 国庆假期愉快！'},
+  '10-05':{name:'国庆节',greeting:'🇨🇳 国庆假期愉快！'},
+  '10-06':{name:'国庆节',greeting:'🇨🇳 国庆假期愉快！'},
+  '10-07':{name:'国庆节',greeting:'🇨🇳 国庆假期愉快！'},
+  '12-24':{name:'平安夜',greeting:'🎄 平安夜快乐！愿平安相伴！'},
+  '12-25':{name:'圣诞节',greeting:'🎅 圣诞节快乐！Merry Christmas！'},
+  '12-31':{name:'跨年夜',greeting:'🎆 跨年快乐！告别旧年，迎接新年！'},
+  '01-28':{name:'除夕',greeting:'🧧 除夕快乐！阖家团圆，新春大吉！'},
+  '01-29':{name:'春节',greeting:'🧧 新春快乐！蛇年大吉，万事如意！'},
+  '01-30':{name:'春节',greeting:'🧧 拜年啦！新春快乐，恭喜发财！'},
+  '01-31':{name:'春节',greeting:'🧧 新春假期愉快！吃好喝好！'},
+  '02-01':{name:'春节',greeting:'🧧 新春假期愉快！'},
+  '02-02':{name:'春节',greeting:'🧧 新春假期愉快！'},
+  '02-03':{name:'春节',greeting:'🧧 新春假期愉快！'},
+  '02-12':{name:'元宵节',greeting:'🏮 元宵节快乐！团圆美满！'},
+  '04-04':{name:'清明节',greeting:'🌿 清明节快乐！缅怀先人，珍惜当下！'},
+  '04-05':{name:'清明节',greeting:'🌿 清明节快乐！'},
+  '05-31':{name:'端午节',greeting:'🐉 端午节快乐！安康顺遂！'},
+  '06-01':{name:'端午节',greeting:'🐉 端午节快乐！'},
+  '10-06':{name:'中秋节',greeting:'🥮 中秋节快乐！花好月圆，阖家团圆！'},
+  '10-07':{name:'中秋节',greeting:'🥮 中秋节快乐！'},
+};
+
+function getHoliday(){
+  const n=new Date();
+  const key=String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
+  return holidays[key]||null;
+}
+
 let _cdAnimated=false;
 function updateCountdown(){
   const n=new Date(),h=n.getHours(),m=n.getMinutes(),s=n.getSeconds(),day=n.getDay();
   const cd=document.getElementById('countdown'),label=document.getElementById('cd-label');
   const timeEl=document.getElementById('cd-time');
   const prevText=timeEl.textContent;
+  
+  // Check holiday first
+  const holiday=getHoliday();
+  if(holiday){
+    cd.className='countdown weekend';
+    label.textContent=`🎉 ${holiday.name}`;
+    const newText=holiday.greeting;
+    if(!_cdAnimated){animateText(timeEl,newText);_cdAnimated=true}else if(prevText!==newText)timeEl.textContent=newText;
+    document.getElementById('cd-sub').textContent='好好享受假期吧~';
+    document.getElementById('cd-bar').style.width='100%';
+    document.getElementById('cd-bar').style.background='linear-gradient(90deg,#f59e0b,#ef4444)';
+    return;
+  }
   
   if(day===0||day===6){
     cd.className='countdown weekend';
