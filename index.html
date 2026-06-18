@@ -545,6 +545,7 @@ const weekendMsgs=[
   {text:'游戏时间',sub:'今天可以尽情玩了',icon:'🎮'},
 ];
 
+let _cdAnimated=false;
 function updateCountdown(){
   const n=new Date(),h=n.getHours(),m=n.getMinutes(),s=n.getSeconds(),day=n.getDay();
   const cd=document.getElementById('countdown'),label=document.getElementById('cd-label');
@@ -557,7 +558,7 @@ function updateCountdown(){
     const msg=weekendMsgs[seed];
     label.textContent=`${msg.icon} ${msg.text}`;
     const newText='🎉 周末愉快';
-    if(prevText!==newText)animateText(timeEl,newText);
+    if(!_cdAnimated){animateText(timeEl,newText);_cdAnimated=true}else if(prevText!==newText)timeEl.textContent=newText;
     document.getElementById('cd-sub').textContent=msg.sub;
     document.getElementById('cd-bar').style.width='100%';
     document.getElementById('cd-bar').style.background='linear-gradient(90deg,#8b5cf6,#ec4899)';
@@ -583,7 +584,7 @@ function updateCountdown(){
     document.getElementById('cd-bar').style.width=Math.min(100,Math.max(0,((cur-start)/(end-start))*100))+'%';
   }
   
-  if(prevText!==newText)animateText(timeEl,newText);
+  if(!_cdAnimated){animateText(timeEl,newText);_cdAnimated=true}else if(prevText!==newText)timeEl.textContent=newText;
 }
 
 function animateText(el,text){
