@@ -257,9 +257,6 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
     </div>
     <div id="w-tip" style="margin-top:8px;padding:6px 10px;background:rgba(255,200,50,.08);border:1px solid rgba(255,200,50,.15);border-radius:8px;font-size:10px;color:#fbbf24;line-height:1.5">
       <div id="w-tip-text"></div>
-      <div style="margin-top:4px;text-align:right">
-        <button onclick="speakTip()" style="background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.2);color:#fbbf24;padding:3px 8px;border-radius:6px;font-size:9px;cursor:pointer">🔊 语音播报</button>
-      </div>
     </div>
   </div>
 
@@ -350,10 +347,6 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
 document.addEventListener('DOMContentLoaded',()=>{
   if(document.fullscreenElement||document.webkitFullscreenElement){
     document.body.style.paddingTop='0';
-  }
-  if('speechSynthesis' in window){
-    window.speechSynthesis.getVoices();
-    window.speechSynthesis.onvoiceschanged=()=>window.speechSynthesis.getVoices();
   }
 });
 
@@ -792,8 +785,7 @@ async function fetchWeather(){
     if(wtype!==currentWeather){currentWeather=wtype;applyWeatherFx(wtype)}
     
     const tips=getWeatherTip(code,parseInt(c.temp_C),parseInt(c.FeelsLikeC),parseInt(c.humidity),h);
-    document.getElementById('w-tip-text').innerHTML=tips.display;
-    window._tipSpeakText=tips.speak;
+    document.getElementById('w-tip-text').innerHTML=tips;
   }catch(e){applyWeatherFx('clear')}
 }
 
@@ -828,38 +820,7 @@ function getWeatherTip(code,temp, feels, hum, hour){
   else if(hour>=17&&hour<19)tips.push(`🌇 下班啦，回家吃${meals[2]}~`);
   else if(hour>=22||hour<6)tips.push('🌙 夜深了，早点休息，晚安');
   
-  return{display:tips.join('<br>')||'✨ 今天也是美好的一天！',speak:tips.map(t=>t.replace(/[^\u4e00-\u9fa5a-zA-Z0-9，。！？：]/g,'')).filter(t=>t.trim()).join('。')};
-}
-
-function speakTip(){
-  const text=window._tipSpeakText;
-  if(!text||!text.trim())return;
-  const btn=document.querySelector('#w-tip button');
-  
-  // Try SpeechSynthesis first
-  if('speechSynthesis' in window){
-    window.speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(text);
-    u.lang='zh-CN';u.rate=0.9;u.pitch=1;
-    u.onstart=()=>{btn.textContent='🔊 播放中...'};
-    u.onend=()=>{btn.textContent='🔊 语音播报'};
-    u.onerror=()=>{
-      // Fallback: try without specifying voice
-      const u2=new SpeechSynthesisUtterance(text);
-      u2.lang='zh-CN';
-      u2.onstart=()=>{btn.textContent='🔊 播放中...'};
-      u2.onend=()=>{btn.textContent='🔊 语音播报'};
-      u2.onerror=()=>{btn.textContent='⚠️ 播放失败';setTimeout(()=>{btn.textContent='🔊 语音播报'},2000)};
-      window.speechSynthesis.speak(u2);
-    };
-    window.speechSynthesis.speak(u);
-    setTimeout(()=>{if(window.speechSynthesis.paused)window.speechSynthesis.resume()},300);
-    return;
-  }
-  
-  // Fallback: use AudioContext beep (not ideal but shows it's working)
-  btn.textContent='⚠️ 当前浏览器不支持语音播报';
-  setTimeout(()=>{btn.textContent='🔊 语音播报'},2000);
+  return{display:tips.join('<br>')||'✨ 今天也是美好的一天！'};
 }
 
 function applyWeatherFx(type){
