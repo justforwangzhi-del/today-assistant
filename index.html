@@ -56,9 +56,14 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:2px;backgro
 .countdown{background:linear-gradient(135deg,rgba(16,185,129,.2),rgba(6,182,212,.15));border:1px solid rgba(16,185,129,.3);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px}
 .countdown.weekend{background:linear-gradient(135deg,rgba(139,92,246,.2),rgba(236,72,153,.15));border-color:rgba(139,92,246,.3)}
 .countdown-label{font-size:11px;color:rgba(255,255,255,.5);margin-bottom:4px}
-.countdown-time{font-size:36px;font-weight:800;letter-spacing:-1px;overflow:hidden}
-.cd-digit{display:inline-block;animation:digitDrop .4s cubic-bezier(.34,1.56,.64,1) forwards}
-@keyframes digitDrop{0%{transform:translateY(-100%);opacity:0}100%{transform:translateY(0);opacity:1}}
+.countdown-time{font-size:36px;font-weight:800;letter-spacing:-1px;overflow:visible;min-height:44px;line-height:1.2}
+.cd-digit{display:inline-block;animation:digitDrop .5s cubic-bezier(.34,1.56,.64,1) both}
+@keyframes digitDrop{
+  0%{transform:translateY(-40px) scale(1.2);opacity:0;filter:blur(4px)}
+  60%{transform:translateY(3px) scale(.98);opacity:1;filter:blur(0)}
+  80%{transform:translateY(-1px) scale(1.01)}
+  100%{transform:translateY(0) scale(1);opacity:1;filter:blur(0)}
+}
 .countdown-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:2px}
 .countdown-bar{height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:10px;overflow:hidden}
 .countdown-fill{height:100%;background:linear-gradient(90deg,#10b981,#06b6d4);border-radius:2px;transition:width 1s linear}
@@ -583,7 +588,7 @@ function updateCountdown(){
 
 function animateText(el,text){
   el.innerHTML=[...text].map((ch,i)=>
-    ch===' '?ch:`<span class="cd-digit" style="animation-delay:${i*40}ms">${ch}</span>`
+    ch===' '?`<span style="display:inline-block;width:8px"></span>`:`<span class="cd-digit" style="animation-delay:${i*60}ms">${ch}</span>`
   ).join('');
 }
 
