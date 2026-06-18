@@ -791,7 +791,12 @@ async function fetchWeather(){
     document.getElementById('w-tip-text').innerHTML=tips.display;
     document.getElementById('w-tip').style.display='block';
     window._tipSpeakText=tips.speak;
-  }catch(e){applyWeatherFx('clear')}
+  }catch(e){
+    applyWeatherFx('clear');
+    document.getElementById('w-tip-text').innerHTML='✨ 今天也是美好的一天！';
+    document.getElementById('w-tip').style.display='block';
+    window._tipSpeakText='今天也是美好的一天';
+  }
 }
 
 function getWeatherTip(code,temp, feels, hum, hour){
