@@ -351,6 +351,10 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(document.fullscreenElement||document.webkitFullscreenElement){
     document.body.style.paddingTop='0';
   }
+  if('speechSynthesis' in window){
+    window.speechSynthesis.getVoices();
+    window.speechSynthesis.onvoiceschanged=()=>window.speechSynthesis.getVoices();
+  }
 });
 
 // ===== Config =====
@@ -824,23 +828,26 @@ function getWeatherTip(code,temp, feels, hum, hour){
   else if(hour>=17&&hour<19)tips.push(`🌇 下班啦，回家吃${meals[2]}~`);
   else if(hour>=22||hour<6)tips.push('🌙 夜深了，早点休息，晚安');
   
-  return{display:tips.join('<br>')||'✨ 今天也是美好的一天！',speak:tips.map(t=>t.replace(/[^\u4e00-\u9fa5a-zA-Z0-9，。！？、]/g,'')).join('，')};
+  return{display:tips.join('<br>')||'✨ 今天也是美好的一天！',speak:tips.map(t=>t.replace(/[^\u4e00-\u9fa5a-zA-Z0-9，。！？、：；""''（）~\s]/g,'')).filter(t=>t.trim()).join('。')};
 }
 
 function speakTip(){
   const text=window._tipSpeakText;
-  if(!text)return;
+  if(!text||!text.trim())return;
   if('speechSynthesis' in window){
     window.speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(text);
     u.lang='zh-CN';u.rate=0.9;u.pitch=1;
+    // Try to find a Chinese voice
+    const voices=window.speechSynthesis.getVoices();
+    const zhVoice=voices.find(v=>v.lang.startsWith('zh'));
+    if(zhVoice)u.voice=zhVoice;
     const btn=document.querySelector('#w-tip button');
     u.onstart=()=>{btn.textContent='🔊 播放中...'};
     u.onend=()=>{btn.textContent='🔊 语音播报'};
-    u.onerror=()=>{btn.textContent='⚠️ 播放失败';setTimeout(()=>{btn.textContent='🔊 语音播报'},2000)};
+    u.onerror=(e)=>{console.error('Speech error:',e);btn.textContent='⚠️ 播放失败';setTimeout(()=>{btn.textContent='🔊 语音播报'},2000)};
     window.speechSynthesis.speak(u);
-    // Chrome bug: resume after a short delay
-    setTimeout(()=>{if(window.speechSynthesis.paused)window.speechSynthesis.resume()},100);
+    setTimeout(()=>{if(window.speechSynthesis.paused)window.speechSynthesis.resume()},200);
   }else{
     const btn=document.querySelector('#w-tip button');
     btn.textContent='⚠️ 浏览器不支持';
