@@ -136,6 +136,13 @@ body::before{content:'';position:fixed;inset:0;background:linear-gradient(135deg
 .del:hover{color:var(--danger)}
 .empty{text-align:center;padding:20px;color:var(--text-muted);font-size:11px}
 
+/* Progress Bar */
+.p-track{position:relative;height:20px;background:rgba(255,255,255,.06);border-radius:10px;overflow:hidden}
+.p-fill{position:absolute;height:100%;width:0%;background:linear-gradient(90deg,#6366f1,#ec4899);border-radius:10px;transition:width 1.5s cubic-bezier(.4,0,.2,1);box-shadow:0 0 10px rgba(99,102,241,.3)}
+.p-fill::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);animation:pShimmer 2s infinite}
+@keyframes pShimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.p-pct{position:absolute;height:100%;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:8px;font-weight:700;color:#fff;text-shadow:0 0 4px rgba(0,0,0,.5);transition:all 1.5s cubic-bezier(.4,0,.2,1)}
+
 /* Wall */
 .wall-post{padding:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.04);border-radius:var(--radius-sm);margin-bottom:6px;position:relative;border-left:3px solid}
 .wall-post:nth-child(3n+1){border-left-color:#6366f1}
@@ -215,14 +222,14 @@ body::before{content:'';position:fixed;inset:0;background:linear-gradient(135deg
     <div class="countdown-bar"><div class="countdown-fill" id="cd-bar" style="width:0%"></div></div>
   </div>
 
-  <div class="card fade" style="animation-delay:.08s" id="progress-card" style="padding:12px 14px">
+  <div class="card fade" style="animation-delay:.08s" id="progress-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <div style="font-size:11px;font-weight:700">📅 今日进度</div>
       <div style="font-size:10px;color:var(--text-muted)" id="p-time"></div>
     </div>
-    <div style="position:relative;height:20px;background:rgba(255,255,255,.06);border-radius:10px;overflow:hidden" id="p-track">
-      <div style="position:absolute;height:100%;background:linear-gradient(90deg,#6366f1,#ec4899);border-radius:10px;transition:width 1s linear" id="p-fill"></div>
-      <div style="position:absolute;height:100%;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;font-size:8px;font-weight:700;color:#fff;text-shadow:0 0 4px rgba(0,0,0,.5);transition:all 1s linear" id="p-pct"></div>
+    <div class="p-track">
+      <div class="p-fill" id="p-fill"></div>
+      <div class="p-pct" id="p-pct"></div>
     </div>
     <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:8px;color:var(--text-muted)">
       <span>🌅 6:00</span>
@@ -581,16 +588,25 @@ function updateProgress(){
   const h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
   const totalMin=h*60+m;
   const pct=Math.min(100,(totalMin/1440)*100);
+  const pctStr=Math.floor(pct)+'%';
   
-  document.getElementById('p-time').textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} · 已过${Math.floor(pct)}%`;
-  document.getElementById('p-fill').style.width=pct+'%';
-  document.getElementById('p-pct').textContent=Math.floor(pct)+'%';
+  document.getElementById('p-time').textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} · 已过${pctStr}`;
+  document.getElementById('p-pct').textContent=pctStr;
   document.getElementById('p-pct').style.left=`calc(${pct}% - 30px)`;
   
   document.getElementById('p-segments').innerHTML=pSegments.map(seg=>{
     const active=totalMin>=seg.from*60&&totalMin<seg.to*60;
     return`<span style="display:inline-flex;align-items:center;gap:2px;padding:2px 6px;border-radius:6px;font-size:8px;font-weight:600;background:${active?seg.color+'22':'rgba(255,255,255,.04)'};color:${active?seg.color:'var(--text-muted)'};border:1px solid ${active?seg.color+'44':'transparent'}">${seg.label}</span>`;
   }).join('');
+  
+  if(!window._pAnimated){
+    window._pAnimated=true;
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      document.getElementById('p-fill').style.width=pct+'%';
+    }));
+  }else{
+    document.getElementById('p-fill').style.width=pct+'%';
+  }
 }
 
 // ===== Music Player =====
