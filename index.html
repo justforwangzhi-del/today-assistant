@@ -277,49 +277,49 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
   </div>
   <div class="home-search">🔍 搜索应用</div>
   <div class="home-grid">
-    <div class="home-icon" onclick="window.open('https://weixin.qq.com','_blank');closeSidePage()">
-      <div class="home-icon-img" style="background:linear-gradient(135deg,#07C160,#06AE56)">💬</div>
-      <div class="home-icon-text">微信</div>
+    <div class="home-icon" onclick="openCamera();closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#1a1a1a,#333)">📷</div>
+      <div class="home-icon-text">相机</div>
     </div>
-    <div class="home-icon" onclick="window.open('https://www.alipay.com','_blank');closeSidePage()">
-      <div class="home-icon-img" style="background:linear-gradient(135deg,#1677FF,#0958d9)">💰</div>
-      <div class="home-icon-text">支付宝</div>
+    <div class="home-icon" onclick="window.location.href='tel:';closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#10b981,#059669)">📞</div>
+      <div class="home-icon-text">电话</div>
+    </div>
+    <div class="home-icon" onclick="window.location.href='sms:';closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#3b82f6,#2563eb)">💬</div>
+      <div class="home-icon-text">短信</div>
+    </div>
+    <div class="home-icon" onclick="window.location.href='mailto:';closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)">📧</div>
+      <div class="home-icon-text">邮件</div>
+    </div>
+    <div class="home-icon" onclick="window.open('https://weixin.qq.com','_blank');closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#07C160,#06AE56)">💚</div>
+      <div class="home-icon-text">微信</div>
     </div>
     <div class="home-icon" onclick="window.open('https://www.bilibili.com','_blank');closeSidePage()">
       <div class="home-icon-img" style="background:linear-gradient(135deg,#FB7299,#E84D7A)">📺</div>
       <div class="home-icon-text">B站</div>
     </div>
-    <div class="home-icon" onclick="window.open('https://www.taobao.com','_blank');closeSidePage()">
-      <div class="home-icon-img" style="background:linear-gradient(135deg,#FF5000,#E64A00)">🛒</div>
-      <div class="home-icon-text">淘宝</div>
-    </div>
-    <div class="home-icon" onclick="window.open('https://www.toutiao.com','_blank');closeSidePage()">
-      <div class="home-icon-img" style="background:linear-gradient(135deg,#FF0000,#CC0000)">📰</div>
-      <div class="home-icon-text">今日头条</div>
-    </div>
     <div class="home-icon" onclick="window.open('https://music.163.com','_blank');closeSidePage()">
       <div class="home-icon-img" style="background:linear-gradient(135deg,#E33E38,#C22424)">🎵</div>
-      <div class="home-icon-text">网易云音乐</div>
-    </div>
-    <div class="home-icon" onclick="window.open('https://www.amap.com','_blank');closeSidePage()">
-      <div class="home-icon-img" style="background:linear-gradient(135deg,#2B9FFF,#1A8AE6)">🗺️</div>
-      <div class="home-icon-text">高德地图</div>
-    </div>
-    <div class="home-icon" onclick="window.open('https://www.xiaohongshu.com','_blank');closeSidePage()">
-      <div class="home-icon-img" style="background:linear-gradient(135deg,#FF2442,#E61E3A)">📷</div>
-      <div class="home-icon-text">小红书</div>
-    </div>
-    <div class="home-icon" onclick="window.open('https://www.zhihu.com','_blank');closeSidePage()">
-      <div class="home-icon-img" style="background:linear-gradient(135deg,#0066FF,#0052CC)">📖</div>
-      <div class="home-icon-text">知乎</div>
+      <div class="home-icon-text">网易云</div>
     </div>
     <div class="home-icon" onclick="window.open('https://www.douyin.com','_blank');closeSidePage()">
       <div class="home-icon-img" style="background:linear-gradient(135deg,#000000,#1a1a1a)">🎬</div>
       <div class="home-icon-text">抖音</div>
     </div>
-    <div class="home-icon" onclick="window.open('https://www.qq.com','_blank');closeSidePage()">
-      <div class="home-icon-img" style="background:linear-gradient(135deg,#12B7F5,#0EA5E9)">🐧</div>
-      <div class="home-icon-text">QQ</div>
+    <div class="home-icon" onclick="window.open('https://www.taobao.com','_blank');closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#FF5000,#E64A00)">🛒</div>
+      <div class="home-icon-text">淘宝</div>
+    </div>
+    <div class="home-icon" onclick="window.open('https://www.xiaohongshu.com','_blank');closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#FF2442,#E61E3A)">📕</div>
+      <div class="home-icon-text">小红书</div>
+    </div>
+    <div class="home-icon" onclick="window.open('https://www.amap.com','_blank');closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#2B9FFF,#1A8AE6)">🗺️</div>
+      <div class="home-icon-text">高德地图</div>
     </div>
     <div class="home-icon" onclick="resetToken();closeSidePage()">
       <div class="home-icon-img" style="background:linear-gradient(135deg,#6366f1,#818cf8)">⚙️</div>
@@ -686,6 +686,24 @@ function scrollToCard(id){
     const el=document.getElementById(id);
     if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
   },350);
+}
+
+function openCamera(){
+  if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+    navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
+    .then(stream=>{
+      const video=document.createElement('video');
+      video.srcObject=stream;video.autoplay=true;video.playsInline=true;
+      video.style.cssText='position:fixed;inset:0;width:100%;height:100%;object-fit:cover;z-index:99999;background:#000';
+      const closeBtn=document.createElement('button');
+      closeBtn.textContent='✕';closeBtn.style.cssText='position:fixed;top:20px;right:20px;z-index:100000;width:40px;height:40px;border-radius:50%;border:none;background:rgba(0,0,0,.5);color:#fff;font-size:20px;cursor:pointer';
+      closeBtn.onclick=()=>{stream.getTracks().forEach(t=>t.stop());video.remove();closeBtn.remove()};
+      document.body.appendChild(video);document.body.appendChild(closeBtn);
+    })
+    .catch(()=>{showSync('⚠️ 无法访问相机')});
+  }else{
+    showSync('⚠️ 浏览器不支持相机');
+  }
 }
 
 (function(){
