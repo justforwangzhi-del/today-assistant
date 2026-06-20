@@ -283,6 +283,10 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
     <div class="home-date" id="home-date"></div>
   </div>
   <div class="home-search">🔍 搜索应用</div>
+  <div style="padding:0 16px 4px;font-size:9px;color:rgba(255,255,255,.2);display:flex;justify-content:space-between">
+    <span>👆 长按图标可删除</span>
+    <span onclick="enterDeleteMode()" style="cursor:pointer;color:rgba(255,255,255,.3)">✏️ 编辑</span>
+  </div>
   <div class="home-grid">
     <div class="home-icon" onclick="openCamera();closeSidePage()">
       <div class="home-icon-img" style="background:linear-gradient(135deg,#1a1a1a,#333)">📷</div>
@@ -736,9 +740,12 @@ let deleteMode=false;
 let longPressTimer=null;
 
 function initLongPress(){
-  document.querySelectorAll('.home-icon').forEach(icon=>{
+  document.querySelectorAll('#side-page .home-icon').forEach(icon=>{
+    icon.onmousedown=()=>{longPressTimer=setTimeout(()=>{enterDeleteMode()},500)};
+    icon.onmouseup=()=>{clearTimeout(longPressTimer)};
+    icon.onmouseleave=()=>{clearTimeout(longPressTimer)};
     icon.addEventListener('touchstart',e=>{
-      longPressTimer=setTimeout(()=>{enterDeleteMode()},600);
+      longPressTimer=setTimeout(()=>{enterDeleteMode()},500);
     },{passive:true});
     icon.addEventListener('touchend',()=>{clearTimeout(longPressTimer)});
     icon.addEventListener('touchmove',()=>{clearTimeout(longPressTimer)});
