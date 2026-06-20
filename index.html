@@ -204,14 +204,20 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
 .pages-container{display:flex;transition:transform .3s cubic-bezier(.4,0,.2,1);will-change:transform}
 .page{min-width:100%;flex-shrink:0}
 .page-main{min-height:100vh;min-height:100dvh}
-.page-side{position:fixed;top:0;left:0;width:100%;height:100%;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:50;background:linear-gradient(180deg,#0a0e1a,#1a1040,#0a0e1a);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.page-side{position:fixed;top:0;left:0;width:100%;height:100%;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:50;background:linear-gradient(180deg,#0a0e1a,#0d1527,#0a0e1a);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,20px)}
 .page-side.open{transform:translateX(0)}
-.page-side-header{display:flex;align-items:center;gap:10px;padding:16px;border-bottom:1px solid rgba(255,255,255,.06)}
-.page-side-back{width:32px;height:32px;border-radius:50%;border:none;background:rgba(255,255,255,.08);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.page-side-title{font-size:16px;font-weight:700}
-.page-side-content{padding:16px}
-.swipe-hint{position:fixed;bottom:80px;left:12px;font-size:10px;color:rgba(255,255,255,.2);z-index:51;pointer-events:none;animation:swipeHint 3s ease-in-out infinite}
-@keyframes swipeHint{0%,100%{opacity:.2;transform:translateX(0)}50%{opacity:.5;transform:translateX(-5px)}}
+.home-header{padding:20px 16px 10px;text-align:center}
+.home-time{font-size:48px;font-weight:200;color:#fff;letter-spacing:-1px}
+.home-date{font-size:12px;color:rgba(255,255,255,.4);margin-top:2px}
+.home-search{margin:12px 16px;padding:10px 14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.06);border-radius:12px;font-size:12px;color:rgba(255,255,255,.3);display:flex;align-items:center;gap:8px}
+.home-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px 0;padding:16px 8px}
+.home-icon{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;border-radius:12px;cursor:pointer;transition:background .2s}
+.home-icon:active{background:rgba(255,255,255,.08)}
+.home-icon-img{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.home-icon-text{font-size:10px;color:rgba(255,255,255,.7);text-align:center}
+.home-dock{position:fixed;bottom:0;left:0;right:0;padding:12px 20px;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px));background:rgba(255,255,255,.04);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-around;z-index:51}
+.home-dock-icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:transform .2s}
+.home-dock-icon:active{transform:scale(.9)}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:49;opacity:0;pointer-events:none;transition:opacity .3s}
 .overlay.show{opacity:1;pointer-events:auto}
 
@@ -263,52 +269,73 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
 
 <div class="overlay" id="overlay" onclick="closeSidePage()"></div>
 <div class="page-side" id="side-page">
-  <div class="page-side-header">
-    <button class="page-side-back" onclick="closeSidePage()">←</button>
-    <div class="page-side-title">⚙️ 设置</div>
+  <div class="home-header">
+    <div class="home-time" id="home-time">00:00</div>
+    <div class="home-date" id="home-date"></div>
   </div>
-  <div class="page-side-content">
-    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;margin-bottom:12px">
-      <div style="font-size:13px;font-weight:700;margin-bottom:10px">🎨 个性化</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)">
-        <span style="font-size:11px">锁屏壁纸</span>
-        <button onclick="loadLockWallpaper();showSync('🔄 壁纸已刷新')" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.2);color:#818cf8;padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer">刷新</button>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)">
-        <span style="font-size:11px">下班倒计时</span>
-        <span style="font-size:10px;color:var(--text-muted)">9:00 - 18:00</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
-        <span style="font-size:11px">背景音乐</span>
-        <span style="font-size:10px;color:var(--text-muted)">Web Audio</span>
-      </div>
+  <div class="home-search">🔍 搜索应用</div>
+  <div class="home-grid">
+    <div class="home-icon" onclick="scrollToCard('countdown');closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#10b981,#06b6d4)">⏰</div>
+      <div class="home-icon-text">倒计时</div>
     </div>
-    
-    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;margin-bottom:12px">
-      <div style="font-size:13px;font-weight:700;margin-bottom:10px">☁️ 数据同步</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)">
-        <span style="font-size:11px">GitHub云同步</span>
-        <button onclick="resetToken()" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.2);color:#818cf8;padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer">设置</button>
-      </div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
-        <span style="font-size:11px">复制带Token链接</span>
-        <button onclick="copyLink()" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.2);color:#818cf8;padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer">复制</button>
-      </div>
+    <div class="home-icon" onclick="scrollToCard('progress-card');closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#6366f1,#ec4899)">📅</div>
+      <div class="home-icon-text">今日进度</div>
     </div>
-    
-    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;margin-bottom:12px">
-      <div style="font-size:13px;font-weight:700;margin-bottom:10px">ℹ️ 关于</div>
-      <div style="font-size:11px;color:var(--text-muted);line-height:1.8">
-        <div>版本：v2.0</div>
-        <div>作者：MiMoCode</div>
-        <div>技术：HTML + CSS + JS</div>
-        <div>数据：IndexedDB + GitHub Gist</div>
-      </div>
+    <div class="home-icon" onclick="closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">🌤️</div>
+      <div class="home-icon-text">天气</div>
+    </div>
+    <div class="home-icon" onclick="closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#8b5cf6,#6366f1)">🏆</div>
+      <div class="home-icon-text">电竞赛事</div>
+    </div>
+    <div class="home-icon" onclick="closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#10b981,#34d399)">📝</div>
+      <div class="home-icon-text">待办事项</div>
+    </div>
+    <div class="home-icon" onclick="closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#f59e0b,#f97316)">😂</div>
+      <div class="home-icon-text">每日一笑</div>
+    </div>
+    <div class="home-icon" onclick="closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#e33e38,#c22424)">🎵</div>
+      <div class="home-icon-text">音乐</div>
+    </div>
+    <div class="home-icon" onclick="closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#8b5cf6,#c084fc)">👹</div>
+      <div class="home-icon-text">吐槽墙</div>
+    </div>
+  </div>
+  <div class="home-grid" style="padding-top:0">
+    <div class="home-icon" onclick="closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#475569,#64748b)">📷</div>
+      <div class="home-icon-text">相册</div>
+    </div>
+    <div class="home-icon" onclick="closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#0ea5e9,#38bdf8)">📁</div>
+      <div class="home-icon-text">文件</div>
+    </div>
+    <div class="home-icon" onclick="closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#10b981,#34d399)">🛒</div>
+      <div class="home-icon-text">应用商店</div>
+    </div>
+    <div class="home-icon" onclick="resetToken();closeSidePage()">
+      <div class="home-icon-img" style="background:linear-gradient(135deg,#6366f1,#818cf8)">⚙️</div>
+      <div class="home-icon-text">设置</div>
     </div>
   </div>
 </div>
 
-<div class="swipe-hint" id="swipe-hint">← 左滑打开设置</div>
+<div class="home-dock" id="home-dock" style="display:none">
+  <div class="home-dock-icon" style="background:linear-gradient(135deg,#10b981,#06b6d4)">📞</div>
+  <div class="home-dock-icon" style="background:linear-gradient(135deg,#3b82f6,#60a5fa)">💬</div>
+  <div class="home-dock-icon" style="background:linear-gradient(135deg,#e33e38,#ef4444)">📷</div>
+  <div class="home-dock-icon" style="background:linear-gradient(135deg,#8b5cf6,#a78bfa)">🌐</div>
+</div>
+
+<div class="swipe-hint" id="swipe-hint">← 左滑打开</div>
 
 <div class="container">
   <div class="header fade">
@@ -642,6 +669,23 @@ function closeSidePage(){
   document.getElementById('side-page').classList.remove('open');
   document.getElementById('overlay').classList.remove('show');
   document.getElementById('swipe-hint').style.display='';
+  document.getElementById('home-dock').style.display='none';
+}
+
+function updateHomeTime(){
+  const n=new Date();
+  const el=document.getElementById('home-time');
+  if(el)el.textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+  const d=['周日','周一','周二','周三','周四','周五','周六'];
+  const el2=document.getElementById('home-date');
+  if(el2)el2.textContent=`${n.getMonth()+1}月${n.getDate()}日 ${d[n.getDay()]}`;
+}
+
+function scrollToCard(id){
+  setTimeout(()=>{
+    const el=document.getElementById(id);
+    if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+  },350);
 }
 
 (function(){
@@ -664,6 +708,8 @@ function closeSidePage(){
       document.getElementById('side-page').classList.add('open');
       document.getElementById('overlay').classList.add('show');
       document.getElementById('swipe-hint').style.display='none';
+      document.getElementById('home-dock').style.display='flex';
+      updateHomeTime();
     }
     distX=0;
   });
