@@ -735,18 +735,311 @@ function openCamera(){
 
 async function loadLockWallpaper(){
   const bg=document.getElementById('lock-bg');
-  // Picsum image IDs for portrait/beauty photos
-  const pics=[1005,1011,1012,1025,1027,1062,1068,1074,1080,1082,1084,1086,1090,1092,1096];
-  const id=pics[Math.floor(Math.random()*pics.length)];
-  loadImg(bg,`https://picsum.photos/id/${id}/1080/1920`);
+  
+  // Method 1: Try CoolAPK beauty wallpaper API
+  try{
+    const r=await fetch('https://api.vvhan.com/api/wallpaper?type=json');
+    const d=await r.json();
+    if(d.url){
+      const img=new Image();
+      img.onload=()=>{bg.style.backgroundImage=`url(${d.url})`;bg.classList.add('loaded')};
+      img.onerror=()=>{tryUnsplash(bg)};
+      img.src=d.url;
+      return;
+    }
+  }catch(e){}
+  
+  // Method 2: Try another beauty wallpaper API
+  try{
+    const r=await fetch('https://api.ixiaowai.cn/api/api.php?format=json');
+    const d=await r.json();
+    if(d.img){
+      const img=new Image();
+      img.onload=()=>{bg.style.backgroundImage=`url(${d.img})`;bg.classList.add('loaded')};
+      img.onerror=()=>{tryUnsplash(bg)};
+      img.src=d.img;
+      return;
+    }
+  }catch(e){}
+  
+  // Method 3: Use Bing wallpaper as final fallback
+  try{
+    const r=await fetch('https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=zh-CN');
+    const d=await r.json();
+    if(d.images&&d.images[0]){
+      const url='https://cn.bing.com'+d.images[0].url;
+      const img=new Image();
+      img.onload=()=>{bg.style.backgroundImage=`url(${url})`;bg.classList.add('loaded')};
+      img.onerror=()=>{tryUnsplash(bg)};
+      img.src=url;
+    }
+  }catch(e){tryUnsplash(bg)}
 }
 
-function loadImg(bg,url){
+function tryUnsplash(bg){
   const img=new Image();
-  img.onload=()=>{bg.style.backgroundImage=`url(${url})`;bg.classList.add('loaded')};
-  img.onerror=()=>{};
-  img.src=url;
+  img.onload=()=>{bg.style.backgroundImage=`url(https://picsum.photos/1080/1920)`;bg.classList.add('loaded')};
+  img.onerror=()=>{bg.style.background='linear-gradient(180deg,#0a0e1a 0%,#1a1040 50%,#0a0e1a 100%)'};
+  img.src='https://picsum.photos/1080/1920';
 }
+
+loadLockWallpaper();
+
+// ===== Clock =====
+function updateClock(){
+  const n=new Date();
+  document.getElementById('clock').textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+  const d=['日','一','二','三','四','五','六'];
+  document.getElementById('date').textContent=`${n.getMonth()+1}月${n.getDate()}日 周${d[n.getDay()]}`;
+}
+
+// ===== Countdown =====
+const weekendMsgs=[
+  {text:'恢复元气中',sub:'今天好好休息~',icon:'🔋'},
+  {text:'今日宜睡觉',sub:'赖床是对周末最大的尊重',icon:'😴'},
+  {text:'快乐星球',sub:'今天只做开心的事',icon:'🌟'},
+  {text:'充电模式',sub:'为下周储备能量',icon:'⚡'},
+  {text:'躺平中...',sub:'人生苦短，及时行乐',icon:'🛋️'},
+  {text:'游戏时间',sub:'今天可以尽情玩了',icon:'🎮'},
+];
+
+// 中国节假日 (月-日)
+const holidays={
+  '01-01':{name:'元旦',greeting:'🎊 新年快乐！新的一年，万事如意！'},
+  '02-14':{name:'情人节',greeting:'💕 情人节快乐！愿你被爱包围~'},
+  '03-08':{name:'妇女节',greeting:'🌸 妇女节快乐！致敬每一位女性！'},
+  '04-01':{name:'愚人节',greeting:'🤡 愚人节快乐！小心被骗哦~'},
+  '05-01':{name:'劳动节',greeting:'💪 劳动节快乐！劳动最光荣！'},
+  '05-04':{name:'青年节',greeting:'🎉 青年节快乐！青春万岁！'},
+  '06-01':{name:'儿童节',greeting:'🎈 六一快乐！保持童心！'},
+  '07-01':{name:'建党节',greeting:'🇨🇳 建党节快乐！'},
+  '08-01':{name:'建军节',greeting:'🎖️ 建军节快乐！致敬军人！'},
+  '09-10':{name:'教师节',greeting:'📚 教师节快乐！感恩老师！'},
+  '10-01':{name:'国庆节',greeting:'🇨🇳 国庆节快乐！祝福祖国！'},
+  '10-02':{name:'国庆节',greeting:'🇨🇳 国庆假期愉快！'},
+  '10-03':{name:'国庆节',greeting:'🇨🇳 国庆假期愉快！'},
+  '10-04':{name:'国庆节',greeting:'🇨🇳 国庆假期愉快！'},
+  '10-05':{name:'国庆节',greeting:'🇨🇳 国庆假期愉快！'},
+  '10-06':{name:'国庆节',greeting:'🇨🇳 国庆假期愉快！'},
+  '10-07':{name:'国庆节',greeting:'🇨🇳 国庆假期愉快！'},
+  '12-24':{name:'平安夜',greeting:'🎄 平安夜快乐！愿平安相伴！'},
+  '12-25':{name:'圣诞节',greeting:'🎅 圣诞节快乐！Merry Christmas！'},
+  '12-31':{name:'跨年夜',greeting:'🎆 跨年快乐！告别旧年，迎接新年！'},
+  '01-28':{name:'除夕',greeting:'🧧 除夕快乐！阖家团圆，新春大吉！'},
+  '01-29':{name:'春节',greeting:'🧧 新春快乐！蛇年大吉，万事如意！'},
+  '01-30':{name:'春节',greeting:'🧧 拜年啦！新春快乐，恭喜发财！'},
+  '01-31':{name:'春节',greeting:'🧧 新春假期愉快！吃好喝好！'},
+  '02-01':{name:'春节',greeting:'🧧 新春假期愉快！'},
+  '02-02':{name:'春节',greeting:'🧧 新春假期愉快！'},
+  '02-03':{name:'春节',greeting:'🧧 新春假期愉快！'},
+  '02-12':{name:'元宵节',greeting:'🏮 元宵节快乐！团圆美满！'},
+  '04-04':{name:'清明节',greeting:'🌿 清明节快乐！缅怀先人，珍惜当下！'},
+  '04-05':{name:'清明节',greeting:'🌿 清明节快乐！'},
+  '06-19':{name:'端午节',greeting:'🐉 端午节快乐！安康顺遂！'},
+  '05-31':{name:'端午节',greeting:'🐉 端午节快乐！安康顺遂！'},
+  '06-01':{name:'端午节',greeting:'🐉 端午节快乐！'},
+  '10-06':{name:'中秋节',greeting:'🥮 中秋节快乐！花好月圆，阖家团圆！'},
+  '10-07':{name:'中秋节',greeting:'🥮 中秋节快乐！'},
+};
+
+function getHoliday(){
+  const n=new Date();
+  const key=String(n.getMonth()+1).padStart(2,'0')+'-'+String(n.getDate()).padStart(2,'0');
+  return holidays[key]||null;
+}
+
+let _cdAnimated=false;
+function updateCountdown(){
+  const n=new Date(),h=n.getHours(),m=n.getMinutes(),s=n.getSeconds(),day=n.getDay();
+  const cd=document.getElementById('countdown'),label=document.getElementById('cd-label');
+  const timeEl=document.getElementById('cd-time');
+  const prevText=timeEl.textContent;
+  
+  // Check holiday first
+  const holiday=getHoliday();
+  if(holiday){
+    cd.className='countdown weekend';
+    label.textContent=`🎉 ${holiday.name}`;
+    const newText=holiday.greeting;
+    if(!_cdAnimated){animateText(timeEl,newText);_cdAnimated=true}else if(prevText!==newText)timeEl.textContent=newText;
+    document.getElementById('cd-sub').textContent='好好享受假期吧~';
+    document.getElementById('cd-bar').style.width='100%';
+    document.getElementById('cd-bar').style.background='linear-gradient(90deg,#f59e0b,#ef4444)';
+    return;
+  }
+  
+  if(day===0||day===6){
+    cd.className='countdown weekend';
+    const seed=(n.getFullYear()*365+n.getMonth()*31+n.getDate())%weekendMsgs.length;
+    const msg=weekendMsgs[seed];
+    label.textContent=`${msg.icon} ${msg.text}`;
+    const newText='🎉 周末愉快';
+    if(!_cdAnimated){animateText(timeEl,newText);_cdAnimated=true}else if(prevText!==newText)timeEl.textContent=newText;
+    document.getElementById('cd-sub').textContent=msg.sub;
+    document.getElementById('cd-bar').style.width='100%';
+    document.getElementById('cd-bar').style.background='linear-gradient(90deg,#8b5cf6,#ec4899)';
+    return;
+  }
+  
+  cd.className='countdown';
+  label.textContent='⏰ 下班倒计时';
+  document.getElementById('cd-bar').style.background='linear-gradient(90deg,#10b981,#06b6d4)';
+  
+  const cur=h*60+m,start=9*60,end=18*60;
+  let newText='';
+  if(cur<start){
+    const d=start-cur;newText=`0${Math.floor(d/60)}:${String(d%60).padStart(2,'0')}:00`;
+    document.getElementById('cd-sub').textContent='距离上班还有';document.getElementById('cd-bar').style.width='0%';
+  }else if(cur>=end){
+    newText='🎉 下班啦！';
+    document.getElementById('cd-sub').textContent='辛苦了，好好休息~';document.getElementById('cd-bar').style.width='100%';
+  }else{
+    const rem=end-cur,rh=Math.floor(rem/60),rm=rem%60,rs=60-s;
+    newText=`${String(rh).padStart(2,'0')}:${String(rm).padStart(2,'0')}:${String(rs).padStart(2,'0')}`;
+    document.getElementById('cd-sub').textContent=`今日已工作 ${Math.floor((cur-start)/60)}小时${(cur-start)%60}分钟`;
+    document.getElementById('cd-bar').style.width=Math.min(100,Math.max(0,((cur-start)/(end-start))*100))+'%';
+  }
+  
+  if(!_cdAnimated){animateText(timeEl,newText);_cdAnimated=true}else if(prevText!==newText)timeEl.textContent=newText;
+}
+
+function animateText(el,text){
+  el.innerHTML=[...text].map((ch,i)=>
+    ch===' '?`<span style="display:inline-block;width:8px"></span>`:`<span class="cd-digit" style="animation-delay:${i*100}ms">${ch}</span>`
+  ).join('');
+}
+
+// ===== Daily Progress =====
+const pSegments=[
+  {from:0,to:6,label:'😴 睡眠',color:'#6366f1'},
+  {from:6,to:8,label:'🌅 早起',color:'#f59e0b'},
+  {from:8,to:12,label:'💼 上午',color:'#10b981'},
+  {from:12,to:14,label:'🍱 午休',color:'#ec4899'},
+  {from:14,to:18,label:'📝 下午',color:'#06b6d4'},
+  {from:18,to:20,label:'🌆 傍晚',color:'#f97316'},
+  {from:20,to:22,label:'🎮 晚间',color:'#8b5cf6'},
+  {from:22,to:24,label:'🌙 夜深',color:'#475569'},
+];
+
+function updateProgress(){
+  const now=new Date();
+  const h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
+  const totalMin=h*60+m;
+  const pct=Math.min(100,(totalMin/1440)*100);
+  const pctStr=Math.floor(pct)+'%';
+  
+  document.getElementById('p-time').textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} · 已过${pctStr}`;
+  document.getElementById('p-pct').textContent=pctStr;
+  document.getElementById('p-pct').style.left=`calc(${pct}% - 30px)`;
+  
+  document.getElementById('p-segments').innerHTML=pSegments.map(seg=>{
+    const active=totalMin>=seg.from*60&&totalMin<seg.to*60;
+    return`<span style="display:inline-flex;align-items:center;gap:2px;padding:2px 6px;border-radius:6px;font-size:8px;font-weight:600;background:${active?seg.color+'22':'rgba(255,255,255,.04)'};color:${active?seg.color:'var(--text-muted)'};border:1px solid ${active?seg.color+'44':'transparent'}">${seg.label}</span>`;
+  }).join('');
+  
+  if(!window._pAnimated){
+    window._pAnimated=true;
+    setTimeout(()=>{
+      document.getElementById('p-fill').style.width=pct+'%';
+      document.getElementById('p-fill').removeAttribute('style');
+      document.getElementById('p-fill').style.width=pct+'%';
+    },100);
+  }else{
+    document.getElementById('p-fill').style.width=pct+'%';
+  }
+}
+
+// ===== Music Player =====
+const neteasePlaylists=[
+  {name:'轻音乐合集',desc:'放松心情',icon:'🎵',id:'2829883282'},
+  {name:'助眠白噪音',desc:'深度睡眠',icon:'😴',id:'2464480762'},
+  {name:'Lo-Fi学习',desc:'专注学习',icon:'🎧',id:'7468373022'},
+  {name:'咖啡馆爵士',desc:'慵懒午后',icon:'☕',id:'19723756'},
+  {name:'钢琴纯音乐',desc:'舒缓心情',icon:'🎹',id:'116401372'},
+  {name:'古风仙侠',desc:'国风雅韵',icon:'🏮',id:'1454920062'},
+  {name:'电子氛围',desc:'沉浸感',icon:'🌊',id:'10494048785'},
+  {name:'日系清新',desc:'治愈系',icon:'🌸',id:'4874984645'},
+];
+const ambientTracks=[
+  {name:'雨声白噪音',desc:'助眠专注',icon:'🌧️',type:'rain'},
+  {name:'海浪声',desc:'放松冥想',icon:'🌊',type:'ocean'},
+  {name:'篝火声',desc:'温暖舒适',icon:'🔥',type:'fire'},
+  {name:'风声',desc:'空灵宁静',icon:'💨',type:'wind'},
+  {name:'森林鸟鸣',desc:'自然清新',icon:'🌲',type:'forest'},
+  {name:'夜晚虫鸣',desc:'乡村宁静',icon:'🦗',type:'night'},
+];
+let curTrack=-1,playing=false,audioCtx=null,audioEl=null,curNodes=[];
+let musicMode='ambient';
+
+function renderMusicList(){
+  const list=musicMode==='ambient'?ambientTracks:neteasePlaylists;
+  document.getElementById('music-list').innerHTML=list.map((t,i)=>`
+    <div class="music-track ${i===curTrack?'active':''}" onclick="${musicMode==='ambient'?`playAmbient(${i})`:openNetease(t.id)}">
+      <span class="music-track-icon">${t.icon}</span>
+      <div class="music-track-info">
+        <div class="music-track-name">${t.name}</div>
+        <div class="music-track-desc">${t.desc}</div>
+      </div>
+      ${i===curTrack&&playing?'<div class="music-visualizer"><span></span><span></span><span></span><span></span></div>':''}
+    </div>`).join('');
+}
+
+function switchMode(m){
+  musicMode=m;curTrack=-1;playing=false;
+  stopAmbient();
+  document.getElementById('play-btn').textContent='▶';
+  document.getElementById('visualizer').style.display='none';
+  document.getElementById('music-name').textContent=m==='ambient'?'环境音效':'网易云歌单';
+  document.getElementById('music-artist').textContent=m==='ambient'?'点击播放':'点击跳转网易云';
+  document.getElementById('mode-btn').textContent=m==='ambient'?'切换歌单':'切换环境音';
+  renderMusicList();
+}
+
+function openNetease(id){window.open(`https://music.163.com/#/playlist?id=${id}`,'_blank')}
+
+// ===== Ambient Sound Engine =====
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
+function stopAmbient(){curNodes.forEach(n=>{try{n.stop&&n.stop();n.disconnect&&n.disconnect()}catch(e){}});curNodes=[]}
+
+function createNoise(ctx,type){
+  const len=ctx.sampleRate*2;const buf=ctx.createBuffer(1,len,ctx.sampleRate);const data=buf.getChannelData(0);
+  if(type==='pink'){let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;for(let i=0;i<len;i++){const w=Math.random()*2-1;b0=.99886*b0+w*.0555179;b1=.99332*b1+w*.0750759;b2=.969*b2+w*.153852;b3=.8665*b3+w*.3104856;b4=.55*b4+w*.5329522;b5=-.7616*b5-w*.016898;data[i]=(b0+b1+b2+b3+b4+b5+b6+w*.5362)*.11;b6=w*.115926}}
+  else if(type==='brown'){let last=0;for(let i=0;i<len;i++){const w=Math.random()*2-1;data[i]=(last+.02*w)/1.02;last=data[i];data[i]*=3.5}}
+  else{for(let i=0;i<len;i++)data[i]=Math.random()*2-1}
+  return buf;
+}
+
+function playAmbientSound(type){
+  stopAmbient();const ctx=getCtx();curNodes=[];
+  const gain=ctx.createGain();gain.connect(ctx.destination);gain.gain.value=.35;curNodes.push(gain);
+  const P=(t,fopts)=>{const n=ctx.createBufferSource();n.buffer=createNoise(ctx,'pink');n.loop=true;const f=ctx.createBiquadFilter();f.type=t;Object.assign(f,fopts);return[n,f]};
+  if(type==='rain'){const[n,f]=P('bandpass',{frequency:800,Q:.5});const g=ctx.createGain();g.gain.value=.6;n.connect(f);f.connect(g);g.connect(gain);n.start();curNodes.push(n,f,g)}
+  else if(type==='ocean'){const n=ctx.createBufferSource();n.buffer=createNoise(ctx,'brown');n.loop=true;const f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=400;const lfo=ctx.createOscillator();lfo.frequency.value=.1;const lg=ctx.createGain();lg.gain.value=300;lfo.connect(lg);lg.connect(f.frequency);lfo.start();n.connect(f);f.connect(gain);n.start();curNodes.push(n,f,lfo,lg)}
+  else if(type==='fire'){const n=ctx.createBufferSource();n.buffer=createNoise(ctx,'brown');n.loop=true;const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=600;f.Q.value=1.5;const g=ctx.createGain();g.gain.value=.4;n.connect(f);f.connect(g);g.connect(gain);n.start();curNodes.push(n,f,g)}
+  else if(type==='wind'){const[n,f]=P('lowpass',{frequency:300});const lfo=ctx.createOscillator();lfo.frequency.value=.07;const lg=ctx.createGain();lg.gain.value=200;lfo.connect(lg);lg.connect(f.frequency);lfo.start();n.connect(f);f.connect(gain);n.start();curNodes.push(n,f,lfo,lg)}
+  else if(type==='forest'){const[n,f]=P('bandpass',{frequency:2000,Q:3});const g=ctx.createGain();g.gain.value=.1;n.connect(f);f.connect(g);g.connect(gain);n.start();curNodes.push(n,f,g)}
+  else if(type==='night'){const n=ctx.createBufferSource();n.buffer=createNoise(ctx,'brown');n.loop=true;const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=4000;f.Q.value=8;const g=ctx.createGain();g.gain.value=.08;n.connect(f);f.connect(g);g.connect(gain);n.start();curNodes.push(n,f,g)}
+}
+
+function playAmbient(i){
+  if(curTrack===i&&playing){togglePlay();return}
+  curTrack=i;playing=true;playAmbientSound(ambientTracks[i].type);
+  document.getElementById('music-name').textContent=ambientTracks[i].name;
+  document.getElementById('music-artist').textContent=ambientTracks[i].desc;
+  document.getElementById('play-btn').textContent='⏸';
+  document.getElementById('visualizer').style.display='flex';
+  renderMusicList();
+}
+
+function togglePlay(){
+  if(musicMode!=='ambient')return;
+  if(curTrack<0){playAmbient(0);return}
+  if(playing){stopAmbient();playing=false}else{playAmbientSound(ambientTracks[curTrack].type);playing=true}
+  document.getElementById('play-btn').textContent=playing?'⏸':'▶';
+  document.getElementById('visualizer').style.display=playing?'flex':'none';
+}
+
+function setVol(v){if(curNodes[0]&&curNodes[0].gain)curNodes[0].gain.value=v/100*.35}
 
 // ===== Weather =====
 const jokes=[
