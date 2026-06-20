@@ -711,9 +711,32 @@ function saveHomeLayout(){
 }
 
 function openDeepSeek(){
-  const q=prompt('输入你想问DeepSeek的问题：');
-  if(q)window.open(`https://chat.deepseek.com/?q=${encodeURIComponent(q)}`,'_blank');
   closeSidePage();
+  const m=document.createElement('div');
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99999;display:flex;align-items:flex-end;justify-content:center;padding:20px';
+  m.innerHTML=`<div style="background:#1e293b;border-radius:16px;padding:20px;width:100%;max-width:400px;border:1px solid rgba(255,255,255,.1)">
+    <div style="font-size:14px;font-weight:700;color:#f8fafc;margin-bottom:12px">🤖 DeepSeek AI</div>
+    <textarea id="ds-input" placeholder="输入你的问题..." style="width:100%;height:80px;padding:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:#f8fafc;font-size:13px;resize:none;outline:none;font-family:inherit"></textarea>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button id="ds-send" style="flex:1;padding:10px;background:linear-gradient(135deg,#6366f1,#818cf8);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer">发送</button>
+      <button id="ds-cancel" style="padding:10px 16px;background:rgba(255,255,255,.05);color:#94a3b8;border:1px solid rgba(255,255,255,.1);border-radius:10px;font-size:13px;cursor:pointer">取消</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+  document.getElementById('ds-input').focus();
+  document.getElementById('ds-cancel').onclick=()=>m.remove();
+  document.getElementById('ds-send').onclick=()=>{
+    const q=document.getElementById('ds-input').value.trim();
+    if(!q)return;
+    window.open(`https://chat.deepseek.com/?q=${encodeURIComponent(q)}`,'_blank');
+    m.remove();
+  };
+  document.getElementById('ds-input').onkeypress=e=>{
+    if(e.key==='Enter'&&!e.shiftKey){
+      e.preventDefault();
+      document.getElementById('ds-send').click();
+    }
+  };
 }
 
 function createAppSphere(){
