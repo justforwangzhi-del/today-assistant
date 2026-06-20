@@ -210,8 +210,28 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
 .fade{opacity:0;transform:translateY(12px);animation:fadeUp .4s ease forwards}
 @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
 </style>
+/* Unlock Screen */
+.lock-screen{position:fixed;inset:0;z-index:99999;background:linear-gradient(180deg,#0a0e1a 0%,#1a1040 50%,#0a0e1a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform .6s cubic-bezier(.4,0,.2,1),opacity .4s ease;cursor:pointer;-webkit-user-select:none;user-select:none}
+.lock-screen.unlocking{transform:translateY(-100%);opacity:0}
+.lock-time{font-size:72px;font-weight:200;color:#fff;letter-spacing:-2px;font-variant-numeric:tabular-nums}
+.lock-date{font-size:14px;color:rgba(255,255,255,.5);margin-top:4px;letter-spacing:1px}
+.lock-icon{width:50px;height:50px;border:2px solid rgba(255,255,255,.2);border-radius:50%;margin-top:50px;display:flex;align-items:center;justify-content:center;font-size:20px;animation:lockPulse 2s ease-in-out infinite}
+@keyframes lockPulse{0%,100%{border-color:rgba(255,255,255,.2);transform:scale(1)}50%{border-color:rgba(255,255,255,.5);transform:scale(1.05)}}
+.lock-hint{position:absolute;bottom:60px;font-size:11px;color:rgba(255,255,255,.3);animation:lockHint 2s ease-in-out infinite}
+@keyframes lockHint{0%,100%{opacity:.3;transform:translateY(0)}50%{opacity:.6;transform:translateY(-5px)}}
+.lock-glow{position:absolute;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,.2),transparent 70%);animation:lockGlow 4s ease-in-out infinite}
+@keyframes lockGlow{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.2);opacity:.8}}
+
 </head>
 <body>
+
+<div class="lock-screen" id="lock-screen" onclick="unlockScreen()">
+  <div class="lock-glow"></div>
+  <div class="lock-time" id="lock-time">00:00</div>
+  <div class="lock-date" id="lock-date"></div>
+  <div class="lock-icon">🔒</div>
+  <div class="lock-hint">👆 点击解锁</div>
+</div>
 
 <div class="bg-orbs"><div class="bg-orb"></div><div class="bg-orb"></div></div>
 <div class="weather-fx" id="weather-fx"></div>
@@ -532,6 +552,20 @@ const LS_TODOS_KEY='today_todos';
 const LS_WALL_KEY='today_wall';
 function lsSave(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 function lsLoad(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
+
+// ===== Lock Screen =====
+function updateLockTime(){
+  const n=new Date();
+  document.getElementById('lock-time').textContent=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;
+  const d=['周日','周一','周二','周三','周四','周五','周六'];
+  document.getElementById('lock-date').textContent=`${n.getMonth()+1}月${n.getDate()}日 ${d[n.getDay()]}`;
+}
+
+function unlockScreen(){
+  const ls=document.getElementById('lock-screen');
+  ls.classList.add('unlocking');
+  setTimeout(()=>{ls.style.display='none'},600);
+}
 
 // ===== Clock =====
 function updateClock(){
@@ -1106,6 +1140,7 @@ async function init(){
   }
   
   // Render
+  updateLockTime();setInterval(updateLockTime,1000);
   updateClock();setInterval(updateClock,1000);
   updateCountdown();setInterval(updateCountdown,1000);
   updateProgress();setInterval(updateProgress,1000);
