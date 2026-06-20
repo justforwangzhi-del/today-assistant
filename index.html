@@ -574,28 +574,53 @@ function unlockScreen(){
 }
 
 async function loadLockWallpaper(){
+  const bg=document.getElementById('lock-bg');
+  
+  // Method 1: Try CoolAPK beauty wallpaper API
   try{
-    // Try Bing wallpaper
+    const r=await fetch('https://api.vvhan.com/api/wallpaper?type=json');
+    const d=await r.json();
+    if(d.url){
+      const img=new Image();
+      img.onload=()=>{bg.style.backgroundImage=`url(${d.url})`;bg.classList.add('loaded')};
+      img.onerror=()=>{tryUnsplash(bg)};
+      img.src=d.url;
+      return;
+    }
+  }catch(e){}
+  
+  // Method 2: Try another beauty wallpaper API
+  try{
+    const r=await fetch('https://api.ixiaowai.cn/api/api.php?format=json');
+    const d=await r.json();
+    if(d.img){
+      const img=new Image();
+      img.onload=()=>{bg.style.backgroundImage=`url(${d.img})`;bg.classList.add('loaded')};
+      img.onerror=()=>{tryUnsplash(bg)};
+      img.src=d.img;
+      return;
+    }
+  }catch(e){}
+  
+  // Method 3: Use Bing wallpaper as final fallback
+  try{
     const r=await fetch('https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=zh-CN');
     const d=await r.json();
     if(d.images&&d.images[0]){
       const url='https://cn.bing.com'+d.images[0].url;
       const img=new Image();
-      img.onload=()=>{
-        const bg=document.getElementById('lock-bg');
-        bg.style.backgroundImage=`url(${url})`;
-        bg.classList.add('loaded');
-      };
+      img.onload=()=>{bg.style.backgroundImage=`url(${url})`;bg.classList.add('loaded')};
+      img.onerror=()=>{tryUnsplash(bg)};
       img.src=url;
     }
-  }catch(e){
-    // Fallback: use a random Unsplash image
-    try{
-      const bg=document.getElementById('lock-bg');
-      bg.style.backgroundImage='url(https://picsum.photos/1080/1920)';
-      bg.classList.add('loaded');
-    }catch(e2){}
-  }
+  }catch(e){tryUnsplash(bg)}
+}
+
+function tryUnsplash(bg){
+  const img=new Image();
+  img.onload=()=>{bg.style.backgroundImage=`url(https://picsum.photos/1080/1920)`;bg.classList.add('loaded')};
+  img.onerror=()=>{bg.style.background='linear-gradient(180deg,#0a0e1a 0%,#1a1040 50%,#0a0e1a 100%)'};
+  img.src='https://picsum.photos/1080/1920';
 }
 
 loadLockWallpaper();
