@@ -204,7 +204,7 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
 .pages-container{display:flex;transition:transform .3s cubic-bezier(.4,0,.2,1);will-change:transform}
 .page{min-width:100%;flex-shrink:0}
 .page-main{min-height:100vh;min-height:100dvh}
-.page-side{position:fixed;top:0;left:0;width:100%;height:100%;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:50;background:linear-gradient(180deg,#0a0e1a,#0d1527,#0a0e1a);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,20px)}
+.page-side{position:fixed;top:0;right:0;width:100%;height:100%;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:50;background:linear-gradient(180deg,#0a0e1a,#0d1527,#0a0e1a);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-top:env(safe-area-inset-top,20px)}
 .page-side.open{transform:translateX(0)}
 .home-header{padding:20px 16px 10px;text-align:center}
 .home-time{font-size:48px;font-weight:200;color:#fff;letter-spacing:-1px}
@@ -220,6 +220,8 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
 .home-dock-icon:active{transform:scale(.9)}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:49;opacity:0;pointer-events:none;transition:opacity .3s}
 .overlay.show{opacity:1;pointer-events:auto}
+.swipe-hint{position:fixed;bottom:80px;right:12px;font-size:10px;color:rgba(255,255,255,.25);z-index:51;pointer-events:none;animation:swipeHint 2s ease-in-out infinite}
+@keyframes swipeHint{0%,100%{opacity:.2;transform:translateX(0)}50%{opacity:.5;transform:translateX(5px)}}
 
 /* Sync Status */
 .sync-status{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:6px 14px;border-radius:20px;font-size:11px;z-index:100;opacity:0;transition:opacity .3s}
@@ -335,7 +337,7 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
   <div class="home-dock-icon" style="background:linear-gradient(135deg,#8b5cf6,#a78bfa)">🌐</div>
 </div>
 
-<div class="swipe-hint" id="swipe-hint">← 左滑打开</div>
+<div class="swipe-hint" id="swipe-hint">右滑打开 →</div>
 
 <div class="container">
   <div class="header fade">
@@ -700,11 +702,11 @@ function scrollToCard(id){
     distX=e.touches[0].clientX-startX;
     const distY=Math.abs(e.touches[0].clientY-startY);
     if(distY>Math.abs(distX)){isDragging=false;return}
-    if(distX<0&&!document.getElementById('side-page').classList.contains('open'))e.preventDefault();
+    if(distX>0&&!document.getElementById('side-page').classList.contains('open'))e.preventDefault();
   },{passive:false});
   document.addEventListener('touchend',e=>{
     if(!isDragging)return;isDragging=false;
-    if(distX<-threshold&&!document.getElementById('side-page').classList.contains('open')){
+    if(distX>threshold&&!document.getElementById('side-page').classList.contains('open')){
       document.getElementById('side-page').classList.add('open');
       document.getElementById('overlay').classList.add('show');
       document.getElementById('swipe-hint').style.display='none';
