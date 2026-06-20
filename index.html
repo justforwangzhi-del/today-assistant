@@ -199,6 +199,22 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
 .music-visualizer span:nth-child(4){animation-delay:.1s}
 @keyframes visualizerPulse{0%{height:3px}100%{height:14px}}
 
+/* Swipe Pages */
+.pages-wrapper{position:relative;width:100%;overflow:hidden}
+.pages-container{display:flex;transition:transform .3s cubic-bezier(.4,0,.2,1);will-change:transform}
+.page{min-width:100%;flex-shrink:0}
+.page-main{min-height:100vh;min-height:100dvh}
+.page-side{position:fixed;top:0;left:0;width:100%;height:100%;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:50;background:linear-gradient(180deg,#0a0e1a,#1a1040,#0a0e1a);overflow-y:auto;-webkit-overflow-scrolling:touch}
+.page-side.open{transform:translateX(0)}
+.page-side-header{display:flex;align-items:center;gap:10px;padding:16px;border-bottom:1px solid rgba(255,255,255,.06)}
+.page-side-back{width:32px;height:32px;border-radius:50%;border:none;background:rgba(255,255,255,.08);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.page-side-title{font-size:16px;font-weight:700}
+.page-side-content{padding:16px}
+.swipe-hint{position:fixed;bottom:80px;left:12px;font-size:10px;color:rgba(255,255,255,.2);z-index:51;pointer-events:none;animation:swipeHint 3s ease-in-out infinite}
+@keyframes swipeHint{0%,100%{opacity:.2;transform:translateX(0)}50%{opacity:.5;transform:translateX(-5px)}}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:49;opacity:0;pointer-events:none;transition:opacity .3s}
+.overlay.show{opacity:1;pointer-events:auto}
+
 /* Sync Status */
 .sync-status{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:6px 14px;border-radius:20px;font-size:11px;z-index:100;opacity:0;transition:opacity .3s}
 .sync-status.show{opacity:1}
@@ -244,6 +260,55 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
 <div class="lightning" id="lightning"></div>
 <div class="sync-status" id="sync-status">✓ 已同步</div>
 <div style="position:fixed;bottom:0;left:0;right:0;height:1px;background:#0f172a;z-index:9999;pointer-events:none"></div>
+
+<div class="overlay" id="overlay" onclick="closeSidePage()"></div>
+<div class="page-side" id="side-page">
+  <div class="page-side-header">
+    <button class="page-side-back" onclick="closeSidePage()">←</button>
+    <div class="page-side-title">⚙️ 设置</div>
+  </div>
+  <div class="page-side-content">
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px">🎨 个性化</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+        <span style="font-size:11px">锁屏壁纸</span>
+        <button onclick="loadLockWallpaper();showSync('🔄 壁纸已刷新')" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.2);color:#818cf8;padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer">刷新</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+        <span style="font-size:11px">下班倒计时</span>
+        <span style="font-size:10px;color:var(--text-muted)">9:00 - 18:00</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+        <span style="font-size:11px">背景音乐</span>
+        <span style="font-size:10px;color:var(--text-muted)">Web Audio</span>
+      </div>
+    </div>
+    
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px">☁️ 数据同步</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+        <span style="font-size:11px">GitHub云同步</span>
+        <button onclick="resetToken()" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.2);color:#818cf8;padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer">设置</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+        <span style="font-size:11px">复制带Token链接</span>
+        <button onclick="copyLink()" style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.2);color:#818cf8;padding:4px 10px;border-radius:6px;font-size:10px;cursor:pointer">复制</button>
+      </div>
+    </div>
+    
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px">ℹ️ 关于</div>
+      <div style="font-size:11px;color:var(--text-muted);line-height:1.8">
+        <div>版本：v2.0</div>
+        <div>作者：MiMoCode</div>
+        <div>技术：HTML + CSS + JS</div>
+        <div>数据：IndexedDB + GitHub Gist</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="swipe-hint" id="swipe-hint">← 左滑打开设置</div>
 
 <div class="container">
   <div class="header fade">
@@ -572,6 +637,37 @@ function unlockScreen(){
   ls.classList.add('unlocking');
   setTimeout(()=>{ls.style.display='none'},600);
 }
+
+function closeSidePage(){
+  document.getElementById('side-page').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('swipe-hint').style.display='';
+}
+
+(function(){
+  let startX=0,startY=0,distX=0,isDragging=false;
+  const threshold=80;
+  document.addEventListener('touchstart',e=>{
+    if(e.touches.length!==1)return;
+    startX=e.touches[0].clientX;startY=e.touches[0].clientY;isDragging=true;
+  },{passive:true});
+  document.addEventListener('touchmove',e=>{
+    if(!isDragging)return;
+    distX=e.touches[0].clientX-startX;
+    const distY=Math.abs(e.touches[0].clientY-startY);
+    if(distY>Math.abs(distX)){isDragging=false;return}
+    if(distX<0&&!document.getElementById('side-page').classList.contains('open'))e.preventDefault();
+  },{passive:false});
+  document.addEventListener('touchend',e=>{
+    if(!isDragging)return;isDragging=false;
+    if(distX<-threshold&&!document.getElementById('side-page').classList.contains('open')){
+      document.getElementById('side-page').classList.add('open');
+      document.getElementById('overlay').classList.add('show');
+      document.getElementById('swipe-hint').style.display='none';
+    }
+    distX=0;
+  });
+})();
 
 async function loadLockWallpaper(){
   const bg=document.getElementById('lock-bg');
