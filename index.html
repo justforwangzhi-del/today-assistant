@@ -292,7 +292,10 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
     <div class="home-time" id="home-time">00:00</div>
     <div class="home-date" id="home-date"></div>
   </div>
-  <div class="home-search">🔍 搜索应用</div>
+  <div class="home-search" onclick="openDeepSeek()" style="cursor:pointer">
+    <span style="font-size:16px">🤖</span>
+    <span>Ask DeepSeek AI...</span>
+  </div>
   <div style="padding:0 16px 4px;font-size:9px;color:rgba(255,255,255,.2);display:flex;justify-content:space-between">
     <span>👆 长按图标可删除</span>
     <span onclick="enterDeleteMode()" style="cursor:pointer;color:rgba(255,255,255,.3)">✏️ 编辑</span>
@@ -705,6 +708,12 @@ function saveHomeLayout(){
     if(text)icons.push(text.textContent);
   });
   localStorage.setItem('homeIcons',JSON.stringify(icons));
+}
+
+function openDeepSeek(){
+  const q=prompt('输入你想问DeepSeek的问题：');
+  if(q)window.open(`https://chat.deepseek.com/?q=${encodeURIComponent(q)}`,'_blank');
+  closeSidePage();
 }
 
 function createAppSphere(){
