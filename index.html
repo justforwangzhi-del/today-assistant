@@ -735,32 +735,22 @@ function openCamera(){
 
 async function loadLockWallpaper(){
   const bg=document.getElementById('lock-bg');
-  
-  // Method 1: vvhan API (美女壁纸)
-  try{
-    const r=await fetch('https://api.vvhan.com/api/wallpaper?type=json',{signal:AbortSignal.timeout(5000)});
-    const d=await r.json();
-    if(d.url){loadImg(bg,d.url);return}
-  }catch(e){}
-  
-  // Method 2: 小爱API
-  try{
-    const r=await fetch('https://api.ixiaowai.cn/api/api.php?format=json',{signal:AbortSignal.timeout(5000)});
-    const d=await r.json();
-    if(d.img){loadImg(bg,d.img);return}
-  }catch(e){}
-  
-  // Method 3: 随机美女图
-  try{
-    loadImg(bg,'https://picsum.photos/1080/1920?random='+Date.now());return;
-  }catch(e){}
-  
-  // Method 4: Bing壁纸
-  try{
-    const r=await fetch('https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1&mkt=zh-CN',{signal:AbortSignal.timeout(5000)});
-    const d=await r.json();
-    if(d.images&&d.images[0]){loadImg(bg,'https://cn.bing.com'+d.images[0].url)}
-  }catch(e){}
+  const pics=[
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=1080&h=1920&fit=crop',
+    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=1080&h=1920&fit=crop',
+    'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=1080&h=1920&fit=crop',
+    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=1080&h=1920&fit=crop',
+    'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=1080&h=1920&fit=crop',
+    'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=1080&h=1920&fit=crop',
+    'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=1080&h=1920&fit=crop',
+    'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=1080&h=1920&fit=crop',
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1080&h=1920&fit=crop',
+    'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=1080&h=1920&fit=crop',
+    'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=1080&h=1920&fit=crop',
+    'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=1080&h=1920&fit=crop',
+  ];
+  const url=pics[Math.floor(Math.random()*pics.length)];
+  loadImg(bg,url);
 }
 
 function loadImg(bg,url){
