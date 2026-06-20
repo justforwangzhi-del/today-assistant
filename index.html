@@ -832,13 +832,18 @@ function openCamera(){
   },{passive:false});
   document.addEventListener('touchend',e=>{
     if(!isDragging)return;isDragging=false;
-    if(distX<-threshold&&!document.getElementById('side-page').classList.contains('open')){
+    const sideOpen=document.getElementById('side-page').classList.contains('open');
+    if(distX<-threshold&&!sideOpen){
+      // Swipe left to open side page
       document.getElementById('side-page').classList.add('open');
       document.getElementById('overlay').classList.add('show');
       document.getElementById('swipe-hint').style.display='none';
       document.getElementById('home-dock').style.display='flex';
       updateHomeTime();
       createAppSphere();
+    }else if(distX>threshold&&sideOpen){
+      // Swipe right to close side page (go back)
+      closeSidePage();
     }
     distX=0;
   });
