@@ -725,13 +725,18 @@ function openDeepSeek(){
   document.body.appendChild(m);
   document.getElementById('ds-input').focus();
   document.getElementById('ds-cancel').onclick=()=>m.remove();
-    document.getElementById('ds-send').onclick=async()=>{
+    document.getElementById('ds-send').onclick=()=>{
       const q=document.getElementById('ds-input').value.trim();
       if(!q)return;
-      try{await navigator.clipboard.writeText(q)}catch(e){}
+      // Copy to clipboard
+      const ta=document.createElement('textarea');
+      ta.value=q;ta.style.position='fixed';ta.style.left='-9999px';
+      document.body.appendChild(ta);ta.select();
+      try{document.execCommand('copy');showSync('📋 已复制问题')}catch(e){showSync('⚠️ 复制失败')}
+      document.body.removeChild(ta);
+      // Open DeepSeek
       window.open('https://chat.deepseek.com','_blank');
       m.remove();
-      showSync('📋 问题已复制，请粘贴到DeepSeek');
     };
   document.getElementById('ds-input').onkeypress=e=>{
     if(e.key==='Enter'&&!e.shiftKey){
