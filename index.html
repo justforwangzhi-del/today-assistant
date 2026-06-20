@@ -725,12 +725,14 @@ function openDeepSeek(){
   document.body.appendChild(m);
   document.getElementById('ds-input').focus();
   document.getElementById('ds-cancel').onclick=()=>m.remove();
-  document.getElementById('ds-send').onclick=()=>{
-    const q=document.getElementById('ds-input').value.trim();
-    if(!q)return;
-    window.open(`https://chat.deepseek.com/?q=${encodeURIComponent(q)}`,'_blank');
-    m.remove();
-  };
+    document.getElementById('ds-send').onclick=async()=>{
+      const q=document.getElementById('ds-input').value.trim();
+      if(!q)return;
+      try{await navigator.clipboard.writeText(q)}catch(e){}
+      window.open('https://chat.deepseek.com','_blank');
+      m.remove();
+      showSync('📋 问题已复制，请粘贴到DeepSeek');
+    };
   document.getElementById('ds-input').onkeypress=e=>{
     if(e.key==='Enter'&&!e.shiftKey){
       e.preventDefault();
