@@ -247,6 +247,18 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
 .swipe-hint{position:fixed;bottom:80px;left:12px;font-size:10px;color:rgba(255,255,255,.25);z-index:51;pointer-events:none;animation:swipeHint 2s ease-in-out infinite}
 @keyframes swipeHint{0%,100%{opacity:.2;transform:translateX(0)}50%{opacity:.5;transform:translateX(-5px)}}
 
+/* Image Gallery */
+.img-gallery{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.img-item{position:relative;border-radius:8px;overflow:hidden;aspect-ratio:1;cursor:pointer;transition:transform .2s}
+.img-item:active{transform:scale(.95)}
+.img-item img{width:100%;height:100%;object-fit:cover}
+.img-item .img-del{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:rgba(239,68,68,.8);border:none;color:#fff;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+.img-item:hover .img-del{opacity:1}
+.img-viewer{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.95);display:none;align-items:center;justify-content:center;flex-direction:column}
+.img-viewer.show{display:flex}
+.img-viewer img{max-width:90%;max-height:80vh;object-fit:contain;border-radius:8px}
+.img-viewer-close{position:absolute;top:20px;right:20px;width:36px;height:36px;border-radius:50%;border:none;background:rgba(255,255,255,.1);color:#fff;font-size:18px;cursor:pointer}
+
 /* Sync Status */
 .sync-status{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);color:#fff;padding:6px 14px;border-radius:20px;font-size:11px;z-index:100;opacity:0;transition:opacity .3s}
 .sync-status.show{opacity:1}
@@ -616,6 +628,19 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
     <div class="list" id="wall-list"></div>
   </div>
 
+  <div class="card fade" style="animation-delay:.27s">
+    <div class="card-header">
+      <div class="card-title">🖼️ 图片库</div>
+      <div class="stats"><span>📷 <strong id="img-count">0</strong></span></div>
+    </div>
+    <div style="margin-bottom:10px">
+      <input type="file" id="img-upload" accept="image/*" multiple style="display:none" onchange="handleImageUpload(event)">
+      <button onclick="document.getElementById('img-upload').click()" style="width:100%;padding:10px;background:linear-gradient(135deg,rgba(99,102,241,.15),rgba(139,92,246,.1));border:1px dashed rgba(99,102,241,.3);border-radius:10px;color:#a5b4fc;font-size:11px;cursor:pointer">📷 点击上传图片</button>
+    </div>
+    <div class="img-gallery" id="img-gallery"></div>
+    <div class="empty" id="img-empty">📷 暂无图片，点击上方按钮上传</div>
+  </div>
+
   <div class="footer" style="display:flex;justify-content:center;align-items:center;gap:12px">
     <span>Today Assistant · Made with ❤️</span>
     <button onclick="resetToken()" style="background:none;border:none;color:var(--text-muted);font-size:9px;cursor:pointer;text-decoration:underline">云同步设置</button>
@@ -883,6 +908,51 @@ function saveHomeLayout(){
     if(text)icons.push(text.textContent);
   });
   localStorage.setItem('homeIcons',JSON.stringify(icons));
+}
+
+// ===== Image Gallery =====
+let galleryImages=JSON.parse(localStorage.getItem('galleryImages')||'[]');
+
+function handleImageUpload(e){
+  const files=e.target.files;
+  if(!files.length)return;
+  Array.from(files).forEach(file=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      galleryImages.push({id:Date.now()+Math.random(),src:ev.target.result,name:file.name});
+      localStorage.setItem('galleryImages',JSON.stringify(galleryImages));
+      renderGallery();
+    };
+    reader.readAsDataURL(file);
+  });
+  e.target.value='';
+}
+
+function renderGallery(){
+  const gallery=document.getElementById('img-gallery');
+  const empty=document.getElementById('img-empty');
+  document.getElementById('img-count').textContent=galleryImages.length;
+  if(!galleryImages.length){gallery.innerHTML='';empty.style.display='';return}
+  empty.style.display='none';
+  gallery.innerHTML=galleryImages.map(img=>`
+    <div class="img-item" onclick="viewImage('${img.src.replace(/'/g,"\\'")}')">
+      <img src="${img.src}" alt="${img.name}">
+      <button class="img-del" onclick="event.stopPropagation();deleteImage(${img.id})">×</button>
+    </div>`).join('');
+}
+
+function deleteImage(id){
+  galleryImages=galleryImages.filter(img=>img.id!==id);
+  localStorage.setItem('galleryImages',JSON.stringify(galleryImages));
+  renderGallery();
+}
+
+function viewImage(src){
+  const viewer=document.createElement('div');
+  viewer.className='img-viewer show';
+  viewer.innerHTML=`<button class="img-viewer-close" onclick="this.parentElement.remove()">✕</button><img src="${src}">`;
+  viewer.onclick=e=>{if(e.target===viewer)viewer.remove()};
+  document.body.appendChild(viewer);
 }
 
 function openMedicalPanel(){
@@ -1726,6 +1796,7 @@ async function init(){
   getMyId();renderEmojiBar();renderWall();
   renderJoke();
   renderMusicList();
+  renderGallery();
   initMusic();
   initLongPress();
   
