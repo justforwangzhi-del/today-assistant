@@ -286,6 +286,11 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
 
 @keyframes fadeUp{to{opacity:1;transform:translateY(0)}}
 
+/* ECG Heartbeat Background */
+.ecg-canvas{position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.15}
+.ecg-line{stroke:url(#ecgGradient);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ecg-glow{stroke:rgba(16,185,129,.4);stroke-width:4;fill:none;filter:blur(3px);stroke-linecap:round;stroke-linejoin:round}
+
 /* Unlock Screen */
 .lock-screen{position:fixed;inset:0;z-index:99999;background:linear-gradient(180deg,#0a0e1a 0%,#1a1040 50%,#0a0e1a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform .6s cubic-bezier(.4,0,.2,1),opacity .4s ease;cursor:pointer;-webkit-user-select:none;user-select:none;overflow:hidden}
 .lock-screen::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.3) 0%,rgba(0,0,0,.1) 50%,rgba(0,0,0,.5) 100%);z-index:1}
@@ -317,6 +322,7 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
 
 <div class="bg-orbs"><div class="bg-orb"></div><div class="bg-orb"></div></div>
 <div class="weather-fx" id="weather-fx"></div>
+<canvas class="ecg-canvas" id="ecg-canvas"></canvas>
 <div class="lightning" id="lightning"></div>
 <div class="sync-status" id="sync-status">✓ 已同步</div>
 <div style="position:fixed;bottom:0;left:0;right:0;height:1px;background:#0f172a;z-index:9999;pointer-events:none"></div>
@@ -1777,6 +1783,118 @@ async function init(){
 }
 
 init();
+
+// ===== ECG Heartbeat Background Effect =====
+(function(){
+  const canvas=document.getElementById('ecg-canvas');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  
+  function resize(){
+    canvas.width=window.innerWidth;
+    canvas.height=window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize',resize);
+  
+  const lines=[
+    {y:0.3,speed:2,color:'rgba(16,185,129,0.8)',glow:'rgba(16,185,129,0.3)',width:2},
+    {y:0.5,speed:1.5,color:'rgba(99,102,241,0.6)',glow:'rgba(99,102,241,0.2)',width:1.5},
+    {y:0.7,speed:1.8,color:'rgba(236,72,153,0.5)',glow:'rgba(236,72,153,0.15)',width:1.2}
+  ];
+  
+  let offset=0;
+  const pulseWidth=120;
+  const pulseGap=400;
+  
+  function drawECGLine(line){
+    const w=canvas.width;
+    const h=canvas.height;
+    const baseY=h*line.y;
+    const amp=h*0.08;
+    
+    ctx.beginPath();
+    ctx.strokeStyle=line.color;
+    ctx.lineWidth=line.width;
+    ctx.lineCap='round';
+    ctx.lineJoin='round';
+    
+    let x=-offset%pulseGap;
+    while(x<w+pulseGap){
+      const px=x;
+      
+      // Flat line
+      ctx.moveTo(px,baseY);
+      ctx.lineTo(px+pulseWidth*0.3,baseY);
+      
+      // P wave (small bump)
+      ctx.quadraticCurveTo(px+pulseWidth*0.35,baseY-amp*0.15,px+pulseWidth*0.4,baseY);
+      
+      // Flat
+      ctx.lineTo(px+pulseWidth*0.45,baseY);
+      
+      // Q wave (small dip)
+      ctx.lineTo(px+pulseWidth*0.48,baseY+amp*0.1);
+      
+      // R wave (tall spike)
+      ctx.lineTo(px+pulseWidth*0.52,baseY-amp*0.9);
+      
+      // S wave (dip below)
+      ctx.lineTo(px+pulseWidth*0.58,baseY+amp*0.2);
+      
+      // Return to baseline
+      ctx.lineTo(px+pulseWidth*0.65,baseY);
+      
+      // T wave (medium bump)
+      ctx.quadraticCurveTo(px+pulseWidth*0.75,baseY-amp*0.25,px+pulseWidth*0.85,baseY);
+      
+      // Flat until next pulse
+      ctx.lineTo(px+pulseWidth,baseY);
+      
+      x+=pulseGap;
+    }
+    
+    ctx.stroke();
+    
+    // Draw glow effect
+    ctx.beginPath();
+    ctx.strokeStyle=line.glow;
+    ctx.lineWidth=line.width*3;
+    ctx.filter='blur(3px)';
+    
+    x=-offset%pulseGap;
+    while(x<w+pulseGap){
+      const px=x;
+      ctx.moveTo(px,baseY);
+      ctx.lineTo(px+pulseWidth*0.3,baseY);
+      ctx.quadraticCurveTo(px+pulseWidth*0.35,baseY-amp*0.15,px+pulseWidth*0.4,baseY);
+      ctx.lineTo(px+pulseWidth*0.45,baseY);
+      ctx.lineTo(px+pulseWidth*0.48,baseY+amp*0.1);
+      ctx.lineTo(px+pulseWidth*0.52,baseY-amp*0.9);
+      ctx.lineTo(px+pulseWidth*0.58,baseY+amp*0.2);
+      ctx.lineTo(px+pulseWidth*0.65,baseY);
+      ctx.quadraticCurveTo(px+pulseWidth*0.75,baseY-amp*0.25,px+pulseWidth*0.85,baseY);
+      ctx.lineTo(px+pulseWidth,baseY);
+      x+=pulseGap;
+    }
+    
+    ctx.stroke();
+    ctx.filter='none';
+  }
+  
+  function animate(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    
+    lines.forEach(line=>{
+      offset+=line.speed;
+      drawECGLine(line);
+    });
+    
+    requestAnimationFrame(animate);
+  }
+  
+  animate();
+})();
 </script>
 </body>
 </html>
