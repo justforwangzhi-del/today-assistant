@@ -336,7 +336,7 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
 </head>
 <body>
 
-<div class="boot-screen" id="boot-screen">
+<div class="boot-screen" id="boot-screen" style="display:none">
   <div class="boot-particles" id="boot-particles"></div>
   <div class="boot-light-streak" style="top:30%;animation-delay:0s"></div>
   <div class="boot-light-streak" style="top:50%;animation-delay:.7s"></div>
@@ -873,12 +873,16 @@ function showBootAnimation(){
   if(!boot||!lock)return;
   
   lock.style.display='none';
+  boot.style.display='flex';
   initBootScreen();
   
   setTimeout(()=>{
     boot.classList.add('hidden');
-    lock.style.display='flex';
-    updateLockTime();
+    setTimeout(()=>{
+      boot.style.display='none';
+      lock.style.display='flex';
+      updateLockTime();
+    },800);
   },2800);
 }
 
