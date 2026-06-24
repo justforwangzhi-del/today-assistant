@@ -291,6 +291,31 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
 .ecg-line{stroke:url(#ecgGradient);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
 .ecg-glow{stroke:rgba(16,185,129,.4);stroke-width:4;fill:none;filter:blur(3px);stroke-linecap:round;stroke-linejoin:round}
 
+/* Boot Screen (HyperOS Style) */
+.boot-screen{position:fixed;inset:0;z-index:999999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .8s ease,transform .8s ease}
+.boot-screen.hidden{opacity:0;transform:scale(1.05);pointer-events:none}
+.boot-logo{position:relative;width:120px;height:120px;margin-bottom:40px}
+.boot-logo-ring{position:absolute;inset:0;border:2px solid rgba(255,255,255,.1);border-radius:50%;animation:bootRingPulse 2s ease-in-out infinite}
+.boot-logo-ring:nth-child(2){inset:15px;border-color:rgba(99,102,241,.2);animation-delay:.3s}
+.boot-logo-ring:nth-child(3){inset:30px;border-color:rgba(236,72,153,.15);animation-delay:.6s}
+@keyframes bootRingPulse{0%,100%{transform:scale(1);opacity:.3}50%{transform:scale(1.08);opacity:.8}}
+.boot-logo-core{position:absolute;inset:40px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#ec4899);display:flex;align-items:center;justify-content:center;animation:bootCoreGlow 1.5s ease-in-out infinite;box-shadow:0 0 40px rgba(99,102,241,.4),0 0 80px rgba(236,72,153,.2)}
+@keyframes bootCoreGlow{0%,100%{box-shadow:0 0 40px rgba(99,102,241,.4),0 0 80px rgba(236,72,153,.2)}50%{box-shadow:0 0 60px rgba(99,102,241,.6),0 0 120px rgba(236,72,153,.3)}}
+.boot-logo-core span{font-size:24px;font-weight:800;color:#fff;text-shadow:0 0 20px rgba(255,255,255,.5)}
+.boot-title{font-size:28px;font-weight:200;color:#fff;letter-spacing:8px;margin-bottom:8px;opacity:0;animation:bootFadeIn .8s ease forwards .5s}
+.boot-subtitle{font-size:11px;color:rgba(255,255,255,.3);letter-spacing:4px;text-transform:uppercase;opacity:0;animation:bootFadeIn .8s ease forwards .8s}
+@keyframes bootFadeIn{to{opacity:1}}
+.boot-dots{display:flex;gap:6px;margin-top:50px}
+.boot-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2);animation:bootDotPulse 1.2s ease-in-out infinite}
+.boot-dot:nth-child(2){animation-delay:.2s}
+.boot-dot:nth-child(3){animation-delay:.4s}
+@keyframes bootDotPulse{0%,100%{background:rgba(255,255,255,.2);transform:scale(1)}50%{background:rgba(99,102,241,.8);transform:scale(1.3)}}
+.boot-particles{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.boot-particle{position:absolute;width:2px;height:2px;background:rgba(99,102,241,.6);border-radius:50%;animation:bootParticle 3s linear infinite}
+@keyframes bootParticle{0%{transform:translateY(100vh) scale(0);opacity:0}10%{opacity:1}90%{opacity:1}100%{transform:translateY(-10vh) scale(1);opacity:0}}
+.boot-light-streak{position:absolute;width:200px;height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,.4),transparent);animation:bootStreak 2s ease-in-out infinite;opacity:0}
+@keyframes bootStreak{0%{transform:translateX(-100vw) rotate(-15deg);opacity:0}20%{opacity:1}80%{opacity:1}100%{transform:translateX(100vw) rotate(-15deg);opacity:0}}
+
 /* Unlock Screen */
 .lock-screen{position:fixed;inset:0;z-index:99999;background:linear-gradient(180deg,#0a0e1a 0%,#1a1040 50%,#0a0e1a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform .6s cubic-bezier(.4,0,.2,1),opacity .4s ease;cursor:pointer;-webkit-user-select:none;user-select:none;overflow:hidden}
 .lock-screen::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.3) 0%,rgba(0,0,0,.1) 50%,rgba(0,0,0,.5) 100%);z-index:1}
@@ -310,6 +335,26 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
 
 </head>
 <body>
+
+<div class="boot-screen" id="boot-screen">
+  <div class="boot-particles" id="boot-particles"></div>
+  <div class="boot-light-streak" style="top:30%;animation-delay:0s"></div>
+  <div class="boot-light-streak" style="top:50%;animation-delay:.7s"></div>
+  <div class="boot-light-streak" style="top:70%;animation-delay:1.4s"></div>
+  <div class="boot-logo">
+    <div class="boot-logo-ring"></div>
+    <div class="boot-logo-ring"></div>
+    <div class="boot-logo-ring"></div>
+    <div class="boot-logo-core"><span>T</span></div>
+  </div>
+  <div class="boot-title">Today</div>
+  <div class="boot-subtitle">Assistant</div>
+  <div class="boot-dots">
+    <div class="boot-dot"></div>
+    <div class="boot-dot"></div>
+    <div class="boot-dot"></div>
+  </div>
+</div>
 
 <div class="lock-screen" id="lock-screen" onclick="unlockScreen()">
   <div class="lock-bg" id="lock-bg"></div>
@@ -806,6 +851,36 @@ const LS_TODOS_KEY='today_todos';
 const LS_WALL_KEY='today_wall';
 function lsSave(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 function lsLoad(k){try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
+
+// ===== Boot Screen =====
+function initBootScreen(){
+  const container=document.getElementById('boot-particles');
+  if(!container)return;
+  for(let i=0;i<30;i++){
+    const p=document.createElement('div');
+    p.className='boot-particle';
+    p.style.left=Math.random()*100+'%';
+    p.style.animationDuration=(2+Math.random()*3)+'s';
+    p.style.animationDelay=Math.random()*2+'s';
+    p.style.width=p.style.height=(1+Math.random()*2)+'px';
+    container.appendChild(p);
+  }
+}
+
+function showBootAnimation(){
+  const boot=document.getElementById('boot-screen');
+  const lock=document.getElementById('lock-screen');
+  if(!boot||!lock)return;
+  
+  lock.style.display='none';
+  initBootScreen();
+  
+  setTimeout(()=>{
+    boot.classList.add('hidden');
+    lock.style.display='flex';
+    updateLockTime();
+  },2800);
+}
 
 // ===== Lock Screen =====
 function updateLockTime(){
@@ -1763,6 +1838,9 @@ async function init(){
       const cp=await cloudLoad('wallPosts');if(cp&&cp.length)wallPosts=cp;
     }catch(e){console.error('Cloud load failed:',e)}
   }
+  
+  // Boot Animation
+  showBootAnimation();
   
   // Render
   updateLockTime();setInterval(updateLockTime,1000);
