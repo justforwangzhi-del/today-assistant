@@ -24,7 +24,8 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
 .bg-orb:nth-child(1){width:400px;height:400px;background:#6366f1;top:-150px;left:-150px}
 .bg-orb:nth-child(2){width:350px;height:350px;background:#ec4899;bottom:-100px;right:-100px;animation-delay:-7s}
 @keyframes orbFloat{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,-30px)}}
-.container{max-width:100%;position:relative;z-index:1;padding:12px 12px 20px 12px}
+.container{max-width:100%;position:relative;z-index:1;padding:12px 12px 20px 12px;opacity:0;transition:opacity .5s ease}
+.container.visible{opacity:1}
 
 /* Weather Effects */
 .weather-fx{position:fixed;inset:0;pointer-events:none;z-index:-1;overflow:hidden;transition:background 2s}
@@ -317,7 +318,7 @@ body::after{content:'';position:fixed;bottom:0;left:0;right:0;height:env(safe-ar
 @keyframes bootStreak{0%{transform:translateX(-100vw) rotate(-15deg);opacity:0}20%{opacity:1}80%{opacity:1}100%{transform:translateX(100vw) rotate(-15deg);opacity:0}}
 
 /* Unlock Screen */
-.lock-screen{position:fixed;inset:0;z-index:99999;background:linear-gradient(180deg,#0a0e1a 0%,#1a1040 50%,#0a0e1a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform .6s cubic-bezier(.4,0,.2,1),opacity .4s ease;cursor:pointer;-webkit-user-select:none;user-select:none;overflow:hidden}
+.lock-screen{position:fixed;inset:0;z-index:99999;background:linear-gradient(180deg,#0a0e1a 0%,#1a1040 50%,#0a0e1a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform .6s cubic-bezier(.4,0,.2,1),opacity .8s ease;cursor:pointer;-webkit-user-select:none;user-select:none;overflow:hidden}
 .lock-screen::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.3) 0%,rgba(0,0,0,.1) 50%,rgba(0,0,0,.5) 100%);z-index:1}
 .lock-bg{position:absolute;inset:0;background-size:cover;background-position:center;transition:opacity 1s ease;opacity:0}
 .lock-bg.loaded{opacity:1}
@@ -877,12 +878,11 @@ function showBootAnimation(){
   initBootScreen();
   
   setTimeout(()=>{
+    lock.style.display='flex';
+    lock.style.opacity='0';
+    updateLockTime();
     boot.classList.add('hidden');
-    setTimeout(()=>{
-      boot.style.display='none';
-      lock.style.display='flex';
-      updateLockTime();
-    },800);
+    setTimeout(()=>{boot.style.display='none';lock.style.opacity=''},800);
   },2800);
 }
 
@@ -897,7 +897,7 @@ function updateLockTime(){
 function unlockScreen(){
   const ls=document.getElementById('lock-screen');
   ls.classList.add('unlocking');
-  setTimeout(()=>{ls.style.display='none'},600);
+  setTimeout(()=>{ls.style.display='none';document.querySelector('.container').classList.add('visible')},600);
 }
 
 function closeSidePage(){
